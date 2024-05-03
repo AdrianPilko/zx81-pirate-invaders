@@ -1,0 +1,1074 @@
+0001   0000             ; Copyright (c) 2024 Adrian Pilkington
+0002   0000             
+0003   0000             ; Permission is hereby granted, free of charge, to any person obtaining a copy
+0004   0000             ; of this software and associated documentation files (the "Software"), to deal
+0005   0000             ; in the Software without restriction, including without limitation the rights
+0006   0000             ; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+0007   0000             ; copies of the Software, and to permit persons to whom the Software is
+0008   0000             ; furnished to do so, subject to the following conditions:
+0009   0000             
+0010   0000             ; The above copyright notice and this permission notice shall be included in all
+0011   0000             ; copies or substantial portions of the Software.
+0012   0000             
+0013   0000             ; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+0014   0000             ; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+0015   0000             ; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+0016   0000             ; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+0017   0000             ; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+0018   0000             ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+0019   0000             ; SOFTWARE.
+0020   0000             
+0021   0000             ;;; Classic shootem up game "pirate invaders"
+0022   0000             ;;;
+0023   0000             ;;; https://youtube.com/@byteforever7829
+0024   0000             
+0025   0000             ;;; Known bug(s)
+0026   0000             ;;;
+0027   0000             
+0028   0000             
+0029   0000             ;some #defines for compatibility with other assemblers
+0030   0000             #define         DEFB .byte 
+0031   0000             #define         DEFW .word
+0032   0000             #define         EQU  .equ
+0033   0000             #define         ORG  .org
+0034   0000             CLS				EQU $0A2A
+0035   0000             ;;;;;#define DEBUG_NO_SCROLL
+0036   0000             ;#define DEBUG_PLAYER_XY
+0037   0000             ;;#define DEBUG_SPRITE_ADDRESS 1
+0038   0000             ;;#define DEBUG_PRINT_ROOM_NUMBER 1
+0039   0000             ;#define DEBUG_MULTIRATECOUNT 1
+0040   0000             ;#define DEBUG_START_IN_ROOM_X   1
+0041   0000             ;#define DEBUG_ROOM_TO_START_IN 7
+0042   0000             ;#define DEBUG_COLLISION_DETECT_1 1
+0043   0000             ;#define DEBUG_COLLISION_DETECT_2 1
+0044   0000             
+0045   0000             #define KEYBOARD_READ_PORT_P_TO_Y	$DF
+0046   0000             ; for start key 
+0047   0000             #define KEYBOARD_READ_PORT_A_TO_G	$FD
+0048   0000             ; keyboard port for shift key to v
+0049   0000             #define KEYBOARD_READ_PORT_SHIFT_TO_V $FE
+0050   0000             ; keyboard space to b
+0051   0000             #define KEYBOARD_READ_PORT_SPACE_TO_B $7F 
+0052   0000             ; keyboard q to t
+0053   0000             #define KEYBOARD_READ_PORT_Q_TO_T $FB
+0054   0000             
+0055   0000             ; starting port numbner for keyboard, is same as first port for shift to v
+0056   0000             #define KEYBOARD_READ_PORT $FE 
+0057   0000             #define SCREEN_WIDTH 32
+0058   0000             #define SCREEN_HEIGHT 23   ; we can use the full screen becuase we're not using PRINT or PRINT AT ROM subroutines
+0059   0000             #define MISSILE_COUNTDOWN_INIT 9
+0060   0000             
+0061   0000             
+0062   0000             VSYNCLOOP       EQU      1
+0063   0000             
+0064   0000             ; character set definition/helpers
+0065   0000             __:				EQU	$00	;spacja
+0066   0000             _QT:			EQU	$0B	;"
+0067   0000             _PD:			EQU	$0C	;funt 
+0068   0000             _SD:			EQU	$0D	;$
+0069   0000             _CL:			EQU	$0E	;:
+0070   0000             _QM:			EQU	$0F	;?
+0071   0000             _OP:			EQU	$10	;(
+0072   0000             _CP:			EQU	$11	;)
+0073   0000             _GT:			EQU	$12	;>
+0074   0000             _LT:			EQU	$13	;<
+0075   0000             _EQ:			EQU	$14	;=
+0076   0000             _PL:			EQU	$15	;+
+0077   0000             _MI:			EQU	$16	;-
+0078   0000             _AS:			EQU	$17	;*
+0079   0000             _SL:			EQU	$18	;/
+0080   0000             _SC:			EQU	$19	;;
+0081   0000             _CM:			EQU	$1A	;,
+0082   0000             _DT:			EQU	$1B	;.
+0083   0000             _NL:			EQU	$76	;NEWLINE
+0084   0000             
+0085   0000             _BL             EQU $80; solid block
+0086   0000             
+0087   0000             _0				EQU $1C
+0088   0000             _1				EQU $1D
+0089   0000             _2				EQU $1E
+0090   0000             _3				EQU $1F
+0091   0000             _4				EQU $20
+0092   0000             _5				EQU $21
+0093   0000             _6				EQU $22
+0094   0000             _7				EQU $23
+0095   0000             _8				EQU $24
+0096   0000             _9				EQU $25
+0097   0000             _A				EQU $26
+0098   0000             _B				EQU $27
+0099   0000             _C				EQU $28
+0100   0000             _D				EQU $29
+0101   0000             _E				EQU $2A
+0102   0000             _F				EQU $2B
+0103   0000             _G				EQU $2C
+0104   0000             _H				EQU $2D
+0105   0000             _I				EQU $2E
+0106   0000             _J				EQU $2F
+0107   0000             _K				EQU $30
+0108   0000             _L				EQU $31
+0109   0000             _M				EQU $32
+0110   0000             _N				EQU $33
+0111   0000             _O				EQU $34
+0112   0000             _P				EQU $35
+0113   0000             _Q				EQU $36
+0114   0000             _R				EQU $37
+0115   0000             _S				EQU $38
+0116   0000             _T				EQU $39
+0117   0000             _U				EQU $3A
+0118   0000             _V				EQU $3B
+0119   0000             _W				EQU $3C
+0120   0000             _X				EQU $3D
+0121   0000             _Y				EQU $3E
+0122   0000             _Z				EQU $3F
+0123   0000             
+0124   0000             
+0125   0000             ;;;; this is the whole ZX81 runtime system and gets assembled and 
+0126   0000             ;;;; loads as it would if we just powered/booted into basic
+0127   0000             
+0128   4009                        ORG  $4009             ; assemble to this address
+0129   4009                                                                             
+0130   4009 00          VERSN:          DEFB 0
+0131   400A 02 00       E_PPC:          DEFW 2
+0132   400C 85 42       D_FILE:         DEFW Display
+0133   400E 86 42       DF_CC:          DEFW Display+1                  ; First character of display
+0134   4010 9E 45       VARS:           DEFW Variables
+0135   4012 00 00       DEST:           DEFW 0
+0136   4014 36 48       E_LINE:         DEFW BasicEnd 
+0137   4016 3A 48       CH_ADD:         DEFW BasicEnd+4                 ; Simulate SAVE "X"
+0138   4018 00 00       X_PTR:          DEFW 0
+0139   401A 3B 48       STKBOT:         DEFW BasicEnd+5
+0140   401C 3B 48       STKEND:         DEFW BasicEnd+5                 ; Empty stack
+0141   401E 00          BREG:           DEFB 0
+0142   401F 3C 40       MEM:            DEFW MEMBOT
+0143   4021 00          UNUSED1:        DEFB 0
+0144   4022 02          DF_SZ:          DEFB 2
+0145   4023 02 00       S_TOP:          DEFW $0002                      ; Top program line number
+0146   4025 BF FD       LAST_K:         DEFW $fdbf
+0147   4027 0F          DEBOUN:         DEFB 15
+0148   4028 37          MARGIN:         DEFB 55
+0149   4029 73 42       NXTLIN:         DEFW Line2                      ; Next line address
+0150   402B 00 00       OLDPPC:         DEFW 0
+0151   402D 00          FLAGX:          DEFB 0
+0152   402E 00 00       STRLEN:         DEFW 0
+0153   4030 8D 0C       T_ADDR:         DEFW $0c8d
+0154   4032 00 00       SEED:           DEFW 0
+0155   4034 A3 F5       FRAMES:         DEFW $f5a3
+0156   4036 00 00       COORDS:         DEFW 0
+0157   4038 BC          PR_CC:          DEFB $bc
+0158   4039 21 18       S_POSN:         DEFW $1821
+0159   403B 40          CDFLAG:         DEFB $40
+0160   403C 00 00       MEMBOT:         DEFB 0,0 ;  zeros
+0161   403E 00 00       UNUNSED2:       DEFW 0
+0162   4040             
+0163   407D                         ORG 16509       ;; we have to push the place in memory for this here becuase basic has 
+0164   407D                                 ;; to start at 16514 if memory was tight we could use the space between UNUSED2
+0165   407D                                 ;; and Line1 for variables
+0166   407D             
+0167   407D 00 0A       Line1:          DEFB $00,$0a                    ; Line 10
+0168   407F F2 01                       DEFW Line1End-Line1Text         ; Line 10 length
+0169   4081 EA          Line1Text:      DEFB $ea                        ; REM
+0170   4082             
+0171   4082             
+0172   4082             
+0173   4082             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0174   4082 C3 85 40    	jp intro_title		; main entry poitn to the code ships the memory definitions
+0175   4085             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0176   4085             	
+0177   4085             intro_title
+0178   4085 CD 2A 0A    	call CLS  ; clears screen and sets the boarder
+0179   4088               
+0180   4088             preinit
+0181   4088             ;; initialise variables that are once per game load/start
+0182   4088             
+0183   4088             initVariables
+0184   4088 AF              xor a
+0185   4089 3A 27 47        ld a, (MissileInFlightFlag)
+0186   408C                 
+0187   408C 3A 28 47        ld a, (missileCountDown)
+0188   408F 3E 09           ld a, 9
+0189   4091 32 06 47        ld (playerXPos), a
+0190   4094 21 9E 45        ld hl, playerSpriteData
+0191   4097 22 4B 47        ld (playerSpritePointer), hl 
+0192   409A 21 86 42        ld hl, Display+1 
+0193   409D 11 1A 02        ld de, 538
+0194   40A0 19              add hl, de 
+0195   40A1 22 25 47        ld (currentPlayerLocation), hl
+0196   40A4 21 86 42        ld hl, Display+1 
+0197   40A7 11 06 00        ld de, 6
+0198   40AA 19              add hl, de     
+0199   40AB 22 50 47        ld (jollyRogerLocation), hl
+0200   40AE 21 01 00        ld hl, 1
+0201   40B1 22 4D 47        ld (jollyRogerDirUpdate),hl
+0202   40B4 3E 05           ld a, 5
+0203   40B6 32 4F 47        ld (jollyRogerXPos),a
+0204   40B9             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+0205   40B9             gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0206   40B9             
+0207   40B9 06 01       	ld b,VSYNCLOOP
+0208   40BB             waitForTVSync	
+0209   40BB CD 67 42    	call vsync
+0210   40BE 10 FB       	djnz waitForTVSync
+0211   40C0                 
+0212   40C0 ED 5B 25 47     ld de, (currentPlayerLocation)
+0213   40C4 21 5E 46        ld hl, blankSprite
+0214   40C7 0E 08           ld c, 8
+0215   40C9 06 08           ld b, 8 
+0216   40CB CD F6 41        call drawSprite
+0217   40CE                 ; xor a
+0218   40CE                 ; ld (evenOddLoopFlag), a    ; used for multi rate enemies
+0219   40CE                 
+0220   40CE                 ; ld a, (evenOddLoopCount)
+0221   40CE                 ; inc a
+0222   40CE                 ; ld (evenOddLoopCount), a
+0223   40CE                 ; cp 8    
+0224   40CE                 ; jr z, resetEvenOddAndSetFlag
+0225   40CE                 
+0226   40CE 18 00           jr continueWithGameLoop
+0227   40D0             resetEvenOddAndSetFlag    
+0228   40D0                 ; xor a
+0229   40D0                 ; ld (evenOddLoopCount), a
+0230   40D0                 ; ld a, 1
+0231   40D0                 ; ld (evenOddLoopFlag), a    ; used for multi rate enemies
+0232   40D0                 ; call drawTreasureSub    
+0233   40D0                 
+0234   40D0             continueWithGameLoop          
+0235   40D0                 ; call printLives   
+0236   40D0                 
+0237   40D0                     
+0238   40D0 3A 53 47        ld a, (gameOverRestartFlag)
+0239   40D3 FE 01           cp 1
+0240   40D5 CA 85 40        jp z, intro_title
+0241   40D8                 
+0242   40D8                 ;call blankEnemySprites
+0243   40D8                 ;call drawEnemySprites        
+0244   40D8                 ;call updateEnemySpritePositions
+0245   40D8                    
+0246   40D8                
+0247   40D8             ; keyboard layout for reading keys on ZX81
+0248   40D8             ; BIT   left block      right block  BIT
+0249   40D8             ; off                                off in <port>, when ld a, <port>
+0250   40D8             ;       0  1 2 3 4     4 3 2 1 0                 <<< bit to check for each column after in a, $fe 
+0251   40D8             ; 3   ( 1  2 3 4 5 ) ( 6 7 8 9 0 )     4
+0252   40D8             ; 2   ( Q  W E R T ) ( Y U I O P )     5
+0253   40D8             ; 1   ( A  S D F G ) ( H I K L n/l)    6
+0254   40D8             ; 0   (sft Z X C V ) ( B N M . spc)    7
+0255   40D8             ;
+0256   40D8             ; to read keys 1 2 3 4 5
+0257   40D8             ; set all bits except bit 3 of register A = 1 1 1 1 0 1 1 1= f7, then execute in a, $fe  (fe is the "keyboard read port")
+0258   40D8             ; now register a will contain a bit pattern to check for which key in that block was set, eg Key "1" = bit 0 of a
+0259   40D8             ; ld a, $f7    
+0260   40D8             ; in a, $fe    
+0261   40D8             ; similarly for the rest, to read from block A S D F G, set a to 1 1 1 1 1 1 1 0 1 = $fd
+0262   40D8             
+0263   40D8                 
+0264   40D8                 ;; read keys
+0265   40D8 3E DF           ld a, KEYBOARD_READ_PORT_P_TO_Y			
+0266   40DA DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port	
+0267   40DC CB 4F           bit 1, a                            ; O
+0268   40DE CA FF 40        jp z, moveLeft
+0269   40E1             
+0270   40E1             
+0271   40E1 3E DF           ld a, KEYBOARD_READ_PORT_P_TO_Y			
+0272   40E3 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0273   40E5 CB 47           bit 0, a					        ; P
+0274   40E7 CA 27 41        jp z, moveRight
+0275   40EA             
+0276   40EA             
+0277   40EA 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+0278   40EC DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0279   40EE CB 47           bit 0, a						    ; SPACE
+0280   40F0 CA 4F 41        jp z, doFireMissile
+0281   40F3                 
+0282   40F3 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+0283   40F5 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0284   40F7 CB 4F           bit 1, a						    ; Z
+0285   40F9 CA 4F 41        jp z, doFireMissile    
+0286   40FC             skipFireKeyDetect_1    
+0287   40FC C3 6B 41        jp updateRestOfScreen                       ; if no key pressed continue
+0288   40FF             
+0289   40FF             moveLeft         
+0290   40FF 3A 06 47        ld a, (playerXPos)
+0291   4102 3D              dec a
+0292   4103 FE 00           cp 0      ;;; this prevents the player moving past edge, but if it's a door
+0293   4105                           ;; trigger seperate code to move to new room
+0294   4105 CA 6B 41        jp z, updateRestOfScreen   
+0295   4108 32 06 47        ld (playerXPos), a
+0296   410B                 
+0297   410B                     
+0298   410B 2A 25 47        ld hl, (currentPlayerLocation)
+0299   410E 2B              dec hl
+0300   410F 22 25 47        ld (currentPlayerLocation), hl  
+0301   4112             
+0302   4112                  
+0303   4112 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+0304   4114 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0305   4116 CB 47           bit 0, a						    ; SPACE
+0306   4118 CA 4F 41        jp z, doFireMissile
+0307   411B                 
+0308   411B 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+0309   411D DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0310   411F CB 4F           bit 1, a						    ; Z
+0311   4121 CA 4F 41        jp z, doFireMissile        
+0312   4124 C3 6B 41        jp updateRestOfScreen 
+0313   4127                 
+0314   4127             moveRight       
+0315   4127 3A 06 47        ld a, (playerXPos)
+0316   412A 3C              inc a
+0317   412B FE 18           cp 24          ;;; this prevents the player moving past edge, but if it's a door
+0318   412D                                ;; trigger seperate code to move to new room
+0319   412D                 
+0320   412D CA 6B 41        jp z, updateRestOfScreen   
+0321   4130 32 06 47        ld (playerXPos), a
+0322   4133                 
+0323   4133                 
+0324   4133                 
+0325   4133 2A 25 47        ld hl, (currentPlayerLocation)    
+0326   4136 23              inc hl
+0327   4137 22 25 47        ld (currentPlayerLocation), hl     
+0328   413A               
+0329   413A 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+0330   413C DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0331   413E CB 47           bit 0, a						    ; SPACE
+0332   4140 CA 4F 41        jp z, doFireMissile
+0333   4143             
+0334   4143 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+0335   4145 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0336   4147 CB 4F           bit 1, a						    ; Z
+0337   4149 CA 4F 41        jp z, doFireMissile         
+0338   414C             
+0339   414C C3 6B 41        jp updateRestOfScreen 
+0340   414F                 
+0341   414F             doFireMissile      ; triggered when jump key pressed just sets the       
+0342   414F 3A 27 47        ld a, (MissileInFlightFlag)
+0343   4152 FE 01           cp 1
+0344   4154 CA 6B 41        jp z, skipLaunchMissile
+0345   4157                 ;; we first need to work out where the missiles should fire from based on current player location
+0346   4157                 ;; unless we're in power up mode then just fires form middle of nose of ship
+0347   4157                 
+0348   4157                 ;; in power up mode we'll fire from nose and wing tips :) (note: not yet implemented) 
+0349   4157 2A 25 47        ld hl, (currentPlayerLocation)
+0350   415A 11 F8 FE        ld de, -264  
+0351   415D 19              add hl, de    
+0352   415E 22 29 47        ld (currentMissilePosition), hl
+0353   4161                 ;;; setup the missile "Time To Live"  (like ethernet TTL right :)
+0354   4161 3E 09           ld a, MISSILE_COUNTDOWN_INIT
+0355   4163 32 28 47        ld (missileCountDown), a
+0356   4166 3E 01           ld a, 1
+0357   4168 32 27 47        ld (MissileInFlightFlag), a
+0358   416B                       
+0359   416B             
+0360   416B             skipLaunchMissile
+0361   416B             updateRestOfScreen 
+0362   416B                 
+0363   416B 2A 4B 47        ld hl, (playerSpritePointer)    
+0364   416E ED 5B 25 47     ld de, (currentPlayerLocation)
+0365   4172 0E 08           ld c, 8
+0366   4174 06 08           ld b, 8    
+0367   4176 CD F6 41        call drawSprite
+0368   4179                 
+0369   4179 21 1E 46        ld hl, jollyRoger
+0370   417C ED 5B 50 47     ld de, (jollyRogerLocation)
+0371   4180 0E 08           ld c, 8
+0372   4182 06 08           ld b, 8    
+0373   4184 CD F6 41        call drawSprite    
+0374   4187 CD C3 41        call updateJollyRoger    
+0375   418A                 
+0376   418A 3A 27 47        ld a, (MissileInFlightFlag)
+0377   418D FE 00           cp 0
+0378   418F CA A3 41        jp z, skipMissileDraw
+0379   4192                 
+0380   4192 21 DE 45        ld hl, missileData
+0381   4195 ED 5B 29 47     ld de, (currentMissilePosition)        
+0382   4199 0E 08           ld c, 8
+0383   419B 06 08           ld b, 8    
+0384   419D CD F6 41        call drawSprite
+0385   41A0                    
+0386   41A0 CD A6 41        call updateMissilePosition
+0387   41A3             skipMissileDraw
+0388   41A3                 
+0389   41A3 C3 B9 40        jp gameLoop
+0390   41A6                 
+0391   41A6             updateMissilePosition
+0392   41A6 3A 28 47          ld a, (missileCountDown)
+0393   41A9 3D                dec a
+0394   41AA FE 00             cp 0
+0395   41AC CA BE 41          jp z, noMissileUpClearMissile
+0396   41AF                   
+0397   41AF 32 28 47          ld (missileCountDown), a
+0398   41B2                   
+0399   41B2 2A 29 47          ld hl, (currentMissilePosition)    
+0400   41B5 11 DF FF          ld de, -33
+0401   41B8 19                add hl, de
+0402   41B9 22 29 47          ld (currentMissilePosition), hl
+0403   41BC 18 04             jr noMissileUpdate
+0404   41BE             noMissileUpClearMissile
+0405   41BE AF                xor a
+0406   41BF 32 27 47          ld (MissileInFlightFlag), a 
+0407   41C2             noMissileUpdate      
+0408   41C2 C9                ret
+0409   41C3                   
+0410   41C3             updateJollyRoger   
+0411   41C3 3A 4F 47        ld a, (jollyRogerXPos)        
+0412   41C6 FE 17           cp 23  
+0413   41C8 28 06           jr z, reverseDirToNeg
+0414   41CA FE 01           cp 1
+0415   41CC 28 0A           jr z, reverseDirToPos
+0416   41CE                     
+0417   41CE 18 10           jr endOfUpdateJollyRoger    
+0418   41D0                 
+0419   41D0             reverseDirToNeg
+0420   41D0 21 FF FF        ld hl, -1 
+0421   41D3 22 4D 47        ld (jollyRogerDirUpdate), hl
+0422   41D6 18 08           jr endOfUpdateJollyRoger 
+0423   41D8                 
+0424   41D8             reverseDirToPos    
+0425   41D8 21 01 00        ld hl, 1 
+0426   41DB 22 4D 47        ld (jollyRogerDirUpdate), hl
+0427   41DE 18 00           jr endOfUpdateJollyRoger 
+0428   41E0                 
+0429   41E0             endOfUpdateJollyRoger    
+0430   41E0 2A 50 47        ld hl, (jollyRogerLocation)
+0431   41E3 ED 5B 4D 47     ld de, (jollyRogerDirUpdate)
+0432   41E7 19              add hl, de
+0433   41E8 22 50 47        ld (jollyRogerLocation), hl
+0434   41EB             
+0435   41EB 2A 4D 47        ld hl, (jollyRogerDirUpdate)    
+0436   41EE 3A 4F 47        ld a, (jollyRogerXPos)
+0437   41F1 85              add a, l
+0438   41F2 32 4F 47        ld (jollyRogerXPos), a 
+0439   41F5                 
+0440   41F5 C9              ret
+0441   41F6                 
+0442   41F6             
+0443   41F6             ;;;; sprite code
+0444   41F6             ;;;; our sprites are custom 8 by 8 charactor blocks - so will look fairly big (maybe too big)
+0445   41F6             ;;;; the generic routines will look at an area of memory stored in hl before the call
+0446   41F6             
+0447   41F6             ;;;; on the zx81 each block is 2 "pixels" horizontally and 2 vertically pre encoded in the sprite memory
+0448   41F6             ;;;; size of sprite in memory using bit pack is 16 * 16 = 256bits ==>>> 32bytes
+0449   41F6             
+0450   41F6             
+0451   41F6             ;;; hl = start of sprite memory
+0452   41F6             ;;; de = offset position in screen memory top left of sprite - no limit check done (yet)
+0453   41F6             ;;; c  = width of sprite (normally 8 to keep things "simple")
+0454   41F6             ;;; b  = rows in sprite (normally 8 to keep things "simple")
+0455   41F6             drawSprite         
+0456   41F6 C5              push bc    
+0457   41F7 D5              push de
+0458   41F8 06 00           ld b, 0               ;; just doing columns in c so zero b
+0459   41FA ED B0           ldir                  ;; ldir repeats ld (de), (hl) until bc = 0 and increments hl and de
+0460   41FC D1              pop de
+0461   41FD EB              ex de, hl    
+0462   41FE 01 21 00        ld bc, 33             ;; move next write position to next row
+0463   4201 09              add hl, bc
+0464   4202 EB              ex de, hl
+0465   4203 C1              pop bc
+0466   4204 10 F0           djnz drawSprite    
+0467   4206 C9              ret
+0468   4207             
+0469   4207             
+0470   4207             ;;; work in progrerss currently crashes - 
+0471   4207             ;; if this could be made to work then the platforms would appear in blank bits of sprite
+0472   4207             ;; which would made game play better
+0473   4207             drawSprite_OR_BACKGROUND         
+0474   4207 C5              push bc    
+0475   4208 D5              push de
+0476   4209                 
+0477   4209 41              ld b, c    ; get column loop counter in b 
+0478   420A             drawSprite_OR_ColLoop
+0479   420A 7E              ld a, (hl)
+0480   420B 23              inc hl
+0481   420C B2              or d
+0482   420D B3              or e
+0483   420E 12              ld (de), a
+0484   420F 13              inc de
+0485   4210 10 F8           djnz drawSprite_OR_ColLoop
+0486   4212             
+0487   4212 D1              pop de
+0488   4213 EB              ex de, hl    
+0489   4214 01 21 00        ld bc, 33             ;; move next write position to next row
+0490   4217 09              add hl, bc
+0491   4218 EB              ex de, hl
+0492   4219 C1              pop bc
+0493   421A 10 EB           djnz drawSprite_OR_BACKGROUND    
+0494   421C C9              ret  
+0495   421D                 
+0496   421D             ; printLives
+0497   421D                 ; ld bc, 46
+0498   421D                 ; ld de, LivesText
+0499   421D                 ; call printstring
+0500   421D                 
+0501   421D                 ; ld a, (playerLives)
+0502   421D                 ; ld de, 51    
+0503   421D                 ; call print_number8bits        
+0504   421D                 ; ret
+0505   421D                 
+0506   421D             
+0507   421D                   
+0508   421D             ; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
+0509   421D             printstring
+0510   421D D5              push de ; preserve de
+0511   421E 21 85 42        ld hl,Display
+0512   4221 09              add hl,bc	
+0513   4222             printstring_loop
+0514   4222 1A              ld a,(de)
+0515   4223 FE FF           cp $ff
+0516   4225 CA 2D 42        jp z,printstring_end
+0517   4228 77              ld (hl),a
+0518   4229 23              inc hl
+0519   422A 13              inc de
+0520   422B 18 F5           jr printstring_loop
+0521   422D             printstring_end	
+0522   422D D1              pop de  ; preserve de
+0523   422E C9              ret  
+0524   422F                 
+0525   422F             print_number16bits    ; bc stores the 16bits, print b then c, de stores offset from Display
+0526   422F 78              ld a, b
+0527   4230 CD 3A 42        call print_number8bits
+0528   4233 79              ld a, c
+0529   4234 13              inc de  ; move de over by 2
+0530   4235 13              inc de
+0531   4236 CD 3A 42        call print_number8bits
+0532   4239 C9              ret
+0533   423A             
+0534   423A                 
+0535   423A             print_number8bits
+0536   423A 2A 0E 40        ld hl, (DF_CC)    
+0537   423D 19              add hl, de    
+0538   423E F5              push af ;store the original value of a for later
+0539   423F E6 F0           and $f0 ; isolate the first digit
+0540   4241 1F              rra
+0541   4242 1F              rra
+0542   4243 1F              rra
+0543   4244 1F              rra
+0544   4245 C6 1C           add a,$1c ; add 28 to the character code
+0545   4247 77              ld (hl), a
+0546   4248 23              inc hl
+0547   4249 F1              pop af ; retrieve original value of a
+0548   424A E6 0F           and $0f ; isolate the second digit
+0549   424C C6 1C           add a,$1c ; add 28 to the character code
+0550   424E 77              ld (hl), a  
+0551   424F                 
+0552   424F C9              ret
+0553   4250             
+0554   4250             printNumber
+0555   4250 21 85 42        ld hl,Display
+0556   4253 09              add hl,bc	
+0557   4254             printNumber_loop
+0558   4254 1A              ld a,(de)
+0559   4255 F5              push af ;store the original value of a for later
+0560   4256 E6 F0           and $f0 ; isolate the first digit
+0561   4258 1F              rra
+0562   4259 1F              rra
+0563   425A 1F              rra
+0564   425B 1F              rra
+0565   425C C6 1C           add a,$1c ; add 28 to the character code
+0566   425E 77              ld (hl), a
+0567   425F 23              inc hl
+0568   4260 F1              pop af ; retrieve original value of a
+0569   4261 E6 0F           and $0f ; isolate the second digit
+0570   4263 C6 1C           add a,$1c ; add 28 to the character code
+0571   4265 77              ld (hl), a      
+0572   4266 C9              ret  
+0573   4267                 
+0574   4267             
+0575   4267             ;check if TV synchro (FRAMES) happend
+0576   4267             vsync	
+0577   4267 3A 34 40    	ld a,(FRAMES)
+0578   426A 4F          	ld c,a
+0579   426B             sync
+0580   426B 3A 34 40    	ld a,(FRAMES)
+0581   426E B9          	cp c
+0582   426F 28 FA       	jr z,sync   
+0583   4271             endOfVsync        
+0584   4271 C9          	ret
+0585   4272             
+0586   4272                 
+0587   4272 76                          DEFB $76                        ; Newline        
+0588   4273             Line1End
+0589   4273 00 14       Line2			DEFB $00,$14
+0590   4275 0E 00                       DEFW Line2End-Line2Text
+0591   4277 F9 D4       Line2Text     	DEFB $F9,$D4                    ; RAND USR
+0592   4279 1D 22 21 1D 				DEFB $1D,$22,$21,$1D,$20        ; 16514                
+0592   427D 20 
+0593   427E 7E                          DEFB $7E                        ; Number
+0594   427F 8F 01 04 00                 DEFB $8F,$01,$04,$00,$00        ; Numeric encoding
+0594   4283 00 
+0595   4284 76                          DEFB $76                        ; Newline
+0596   4285             Line2End            
+0597   4285             endBasic
+0598   4285                                                                             
+0599   4285 76          Display        	DEFB $76                                                 				
+0600   4286 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76                     
+0600   428A 00 00 00 00 
+0600   428E 00 00 00 00 
+0600   4292 00 00 00 00 
+0600   4296 00 00 00 00 
+0600   429A 00 00 00 00 
+0600   429E 00 00 00 00 
+0600   42A2 00 00 00 00 
+0600   42A6 76 
+0601   42A7 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0601   42AB 00 00 00 00 
+0601   42AF 00 00 00 00 
+0601   42B3 00 00 00 00 
+0601   42B7 00 00 00 00 
+0601   42BB 00 00 00 00 
+0601   42BF 00 00 00 00 
+0601   42C3 00 00 00 00 
+0601   42C7 76 
+0602   42C8 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0602   42CC 00 00 00 00 
+0602   42D0 00 00 00 00 
+0602   42D4 00 00 00 00 
+0602   42D8 00 00 00 00 
+0602   42DC 00 00 00 00 
+0602   42E0 00 00 00 00 
+0602   42E4 00 00 00 00 
+0602   42E8 76 
+0603   42E9 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0603   42ED 00 00 00 00 
+0603   42F1 00 00 00 00 
+0603   42F5 00 00 00 00 
+0603   42F9 00 00 00 00 
+0603   42FD 00 00 00 00 
+0603   4301 00 00 00 00 
+0603   4305 00 00 00 00 
+0603   4309 76 
+0604   430A 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0604   430E 00 00 00 00 
+0604   4312 00 00 00 00 
+0604   4316 00 00 00 00 
+0604   431A 00 00 00 00 
+0604   431E 00 00 00 00 
+0604   4322 00 00 00 00 
+0604   4326 00 00 00 00 
+0604   432A 76 
+0605   432B 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0605   432F 00 00 00 00 
+0605   4333 00 00 00 00 
+0605   4337 00 00 00 00 
+0605   433B 00 00 00 00 
+0605   433F 00 00 00 00 
+0605   4343 00 00 00 00 
+0605   4347 00 00 00 00 
+0605   434B 76 
+0606   434C 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0606   4350 00 00 00 00 
+0606   4354 00 00 00 00 
+0606   4358 00 00 00 00 
+0606   435C 00 00 00 00 
+0606   4360 00 00 00 00 
+0606   4364 00 00 00 00 
+0606   4368 00 00 00 00 
+0606   436C 76 
+0607   436D 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0607   4371 00 00 00 00 
+0607   4375 00 00 00 00 
+0607   4379 00 00 00 00 
+0607   437D 00 00 00 00 
+0607   4381 00 00 00 00 
+0607   4385 00 00 00 00 
+0607   4389 00 00 00 00 
+0607   438D 76 
+0608   438E 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0608   4392 00 00 00 00 
+0608   4396 00 00 00 00 
+0608   439A 00 00 00 00 
+0608   439E 00 00 00 00 
+0608   43A2 00 00 00 00 
+0608   43A6 00 00 00 00 
+0608   43AA 00 00 00 00 
+0608   43AE 76 
+0609   43AF 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0609   43B3 00 00 00 00 
+0609   43B7 00 00 00 00 
+0609   43BB 00 00 00 00 
+0609   43BF 00 00 00 00 
+0609   43C3 00 00 00 00 
+0609   43C7 00 00 00 00 
+0609   43CB 00 00 00 00 
+0609   43CF 76 
+0610   43D0 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0610   43D4 00 00 00 00 
+0610   43D8 00 00 00 00 
+0610   43DC 00 00 00 00 
+0610   43E0 00 00 00 00 
+0610   43E4 00 00 00 00 
+0610   43E8 00 00 00 00 
+0610   43EC 00 00 00 00 
+0610   43F0 76 
+0611   43F1 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0611   43F5 00 00 00 00 
+0611   43F9 00 00 00 00 
+0611   43FD 00 00 00 00 
+0611   4401 00 00 00 00 
+0611   4405 00 00 00 00 
+0611   4409 00 00 00 00 
+0611   440D 00 00 00 00 
+0611   4411 76 
+0612   4412 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0612   4416 00 00 00 00 
+0612   441A 00 00 00 00 
+0612   441E 00 00 00 00 
+0612   4422 00 00 00 00 
+0612   4426 00 00 00 00 
+0612   442A 00 00 00 00 
+0612   442E 00 00 00 00 
+0612   4432 76 
+0613   4433 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0613   4437 00 00 00 00 
+0613   443B 00 00 00 00 
+0613   443F 00 00 00 00 
+0613   4443 00 00 00 00 
+0613   4447 00 00 00 00 
+0613   444B 00 00 00 00 
+0613   444F 00 00 00 00 
+0613   4453 76 
+0614   4454 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0614   4458 00 00 00 00 
+0614   445C 00 00 00 00 
+0614   4460 00 00 00 00 
+0614   4464 00 00 00 00 
+0614   4468 00 00 00 00 
+0614   446C 00 00 00 00 
+0614   4470 00 00 00 00 
+0614   4474 76 
+0615   4475 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0615   4479 00 00 00 00 
+0615   447D 00 00 00 00 
+0615   4481 00 00 00 00 
+0615   4485 00 00 00 00 
+0615   4489 00 00 00 00 
+0615   448D 00 00 00 00 
+0615   4491 00 00 00 00 
+0615   4495 76 
+0616   4496 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0616   449A 00 00 00 00 
+0616   449E 00 00 00 00 
+0616   44A2 00 00 00 00 
+0616   44A6 00 00 00 00 
+0616   44AA 00 00 00 00 
+0616   44AE 00 00 00 00 
+0616   44B2 00 00 00 00 
+0616   44B6 76 
+0617   44B7 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0617   44BB 00 00 00 00 
+0617   44BF 00 00 00 00 
+0617   44C3 00 00 00 00 
+0617   44C7 00 00 00 00 
+0617   44CB 00 00 00 00 
+0617   44CF 00 00 00 00 
+0617   44D3 00 00 00 00 
+0617   44D7 76 
+0618   44D8 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0618   44DC 00 00 00 00 
+0618   44E0 00 00 00 00 
+0618   44E4 00 00 00 00 
+0618   44E8 00 00 00 00 
+0618   44EC 00 00 00 00 
+0618   44F0 00 00 00 00 
+0618   44F4 00 00 00 00 
+0618   44F8 76 
+0619   44F9 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0619   44FD 00 00 00 00 
+0619   4501 00 00 00 00 
+0619   4505 00 00 00 00 
+0619   4509 00 00 00 00 
+0619   450D 00 00 00 00 
+0619   4511 00 00 00 00 
+0619   4515 00 00 00 00 
+0619   4519 76 
+0620   451A 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0620   451E 00 00 00 00 
+0620   4522 00 00 00 00 
+0620   4526 00 00 00 00 
+0620   452A 00 00 00 00 
+0620   452E 00 00 00 00 
+0620   4532 00 00 00 00 
+0620   4536 00 00 00 00 
+0620   453A 76 
+0621   453B 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0621   453F 00 00 00 00 
+0621   4543 00 00 00 00 
+0621   4547 00 00 00 00 
+0621   454B 00 00 00 00 
+0621   454F 00 00 00 00 
+0621   4553 00 00 00 00 
+0621   4557 00 00 00 00 
+0621   455B 76 
+0622   455C 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0622   4560 00 00 00 00 
+0622   4564 00 00 00 00 
+0622   4568 00 00 00 00 
+0622   456C 00 00 00 00 
+0622   4570 00 00 00 00 
+0622   4574 00 00 00 00 
+0622   4578 00 00 00 00 
+0622   457C 76 
+0623   457D 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+0623   4581 00 00 00 00 
+0623   4585 00 00 00 00 
+0623   4589 00 00 00 00 
+0623   458D 00 00 00 00 
+0623   4591 00 00 00 00 
+0623   4595 00 00 00 00 
+0623   4599 00 00 00 00 
+0623   459D 76 
+0624   459E             
+0625   459E             Variables: 
+0626   459E             
+0627   459E             playerSpriteData
+0628   459E 00 00 00 85      DEFB   $00, $00, $00, $85, $05, $00, $00, $00, $00, $00, $00, $81,
+0628   45A2 05 00 00 00 
+0628   45A6 00 00 00 81 
+0629   45AA 82 00 00 00      DEFB	$82, $00, $00, $00, $00, $00, $00, $05, $85, $00, $00, $00,
+0629   45AE 00 00 00 05 
+0629   45B2 85 00 00 00 
+0630   45B6 00 00 85 80      DEFB	$00, $00, $85, $80, $80, $05, $00, $00, $05, $87, $80, $80,
+0630   45BA 80 05 00 00 
+0630   45BE 05 87 80 80 
+0631   45C2 80 80 04 85      DEFB	$80, $80, $04, $85, $82, $80, $80, $82, $81, $80, $80, $81,
+0631   45C6 82 80 80 82 
+0631   45CA 81 80 80 81 
+0632   45CE 07 03 84 82      DEFB	$07, $03, $84, $82, $81, $07, $03, $84, $00, $00, $00, $84,
+0632   45D2 81 07 03 84 
+0632   45D6 00 00 00 84 
+0633   45DA 07 00 00 00      DEFB	$07, $00, $00, $00     
+0634   45DE             missileData     
+0635   45DE 00 00 00 00      DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+0635   45E2 00 00 00 00 
+0635   45E6 00 00 00 00 
+0636   45EA 00 00 00 00      DEFB	$00, $00, $00, $00, $00, $00, $00, $87, $04, $00, $00, $00,
+0636   45EE 00 00 00 87 
+0636   45F2 04 00 00 00 
+0637   45F6 00 00 00 02      DEFB	$00, $00, $00, $02, $01, $00, $00, $00, $00, $00, $00, $00,
+0637   45FA 01 00 00 00 
+0637   45FE 00 00 00 00 
+0638   4602 00 00 00 00      DEFB	$00, $00, $00, $00, $00, $00, $00, $85, $05, $00, $00, $00,
+0638   4606 00 00 00 85 
+0638   460A 05 00 00 00 
+0639   460E 00 00 00 00      DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+0639   4612 00 00 00 00 
+0639   4616 00 00 00 00 
+0640   461A 00 00 00 00      DEFB	$00, $00, $00, $00     
+0641   461E             jollyRoger     
+0642   461E 87 03 00 00      DEFB	$87, $03, $00, $00, $00, $00, $03, $04, $05, $86, $00, $83,
+0642   4622 00 00 03 04 
+0642   4626 05 86 00 83 
+0643   462A 83 00 06 85      DEFB	$83, $00, $06, $85, $00, $00, $06, $04, $87, $86, $00, $00,
+0643   462E 00 00 06 04 
+0643   4632 87 86 00 00 
+0644   4636 00 00 05 87      DEFB	$00, $00, $05, $87, $04, $85, $00, $00, $00, $00, $02, $83,
+0644   463A 04 85 00 00 
+0644   463E 00 00 02 83 
+0645   4642 83 01 00 00      DEFB	$83, $01, $00, $00, $00, $00, $04, $07, $84, $87, $00, $00,
+0645   4646 00 00 04 07 
+0645   464A 84 87 00 00 
+0646   464E 05 06 00 01      DEFB	$05, $06, $00, $01, $02, $00, $86, $85, $02, $83, $00, $00,
+0646   4652 02 00 86 85 
+0646   4656 02 83 00 00 
+0647   465A 00 00 83 01      DEFB	$00, $00, $83, $01     
+0648   465E             
+0649   465E             ; used to clear current location before move    
+0650   465E             blankSprite
+0651   465E 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+0651   4662 00 00 00 00 
+0652   4666 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+0652   466A 00 00 00 00 
+0653   466E 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+0653   4672 00 00 00 00 
+0654   4676 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+0654   467A 00 00 00 00 
+0655   467E 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+0655   4682 00 00 00 00 
+0656   4686 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+0656   468A 00 00 00 00 
+0657   468E 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+0657   4692 00 00 00 00 
+0658   4696 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0    
+0658   469A 00 00 00 00 
+0659   469E 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+0659   46A2 00 00 00 00 
+0660   46A6 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0      
+0660   46AA 00 00 00 00 
+0661   46AE 08 08 00 00     DEFB   8,  8,  0,  0,  0,  0,  0,  0      
+0661   46B2 00 00 00 00 
+0662   46B6             blockFilled    ;8*10
+0663   46B6 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+0663   46BA 08 08 08 08 
+0664   46BE 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+0664   46C2 08 08 08 08 
+0665   46C6 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+0665   46CA 08 08 08 08 
+0666   46CE 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+0666   46D2 08 08 08 08 
+0667   46D6 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+0667   46DA 08 08 08 08 
+0668   46DE 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+0668   46E2 08 08 08 08 
+0669   46E6 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+0669   46EA 08 08 08 08 
+0670   46EE 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+0670   46F2 08 08 08 08 
+0671   46F6 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8     
+0671   46FA 08 08 08 08 
+0672   46FE 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8    
+0672   4702 08 08 08 08 
+0673   4706             
+0674   4706             playerXPos
+0675   4706 00              DEFB 0
+0676   4707             
+0677   4707             enemySpriteZeroPos_ST  
+0678   4707 00 00           DEFW 0
+0679   4709             enemySpriteOnePos_ST    
+0680   4709 00 00           DEFW 0
+0681   470B             enemySpriteZeroPos_END
+0682   470B 00 00           DEFW 0
+0683   470D             enemySpriteOnePos_END   
+0684   470D 00 00           DEFW 0
+0685   470F             enemySpriteZeroPos_DIR
+0686   470F 00 00           DEFW 0
+0687   4711             enemySpriteOnePos_DIR  
+0688   4711 00 00           DEFW 0
+0689   4713             enemySpriteZeroPos_CUR
+0690   4713 00 00           DEFW 0
+0691   4715             enemySpriteOnePos_CUR
+0692   4715 00 00           DEFW 0
+0693   4717             enemySpriteZeroPos_RATE
+0694   4717 00              DEFB 0
+0695   4718             enemySpriteOnePos_RATE
+0696   4718 00              DEFB 0    
+0697   4719             TEMP_enemySpritePointer
+0698   4719 00 00           DEFW 0
+0699   471B             TEMP_enemySpritePos_CUR
+0700   471B 00 00           DEFW 0
+0701   471D             enemySpriteZero_HorizVert
+0702   471D 00              DEFB 0
+0703   471E             enemySpriteOne_HorizVert    
+0704   471E 00              DEFB 0
+0705   471F             TEMP_enemySpriteFrame
+0706   471F 00              DEFB 0
+0707   4720             enemySpriteFrameZero
+0708   4720 00              DEFB 0
+0709   4721             enemySpriteFrameOne    
+0710   4721 00              DEFB 0
+0711   4722             enemySprites   ;; keeping these to 4*4 for speed and size
+0712   4722             enemySprite4by4BlankPointer
+0713   4722 00 00           DEFW 0
+0714   4724             YSpeed   
+0715   4724 00              DEFB 0
+0716   4725             currentPlayerLocation 
+0717   4725 00 00           DEFW 0
+0718   4727             MissileInFlightFlag
+0719   4727 00              DEFB 0
+0720   4728             missileCountDown
+0721   4728 00              DEFB 0
+0722   4729             currentMissilePosition    
+0723   4729 00 00           DEFW 0
+0724   472B             enemySprite4by4Blank
+0725   472B 00 00 00 00     DEFB 0, 0, 0 ,0, 0, 0
+0725   472F 00 00 
+0726   4731 00 00 00 00     DEFB 0, 0, 0 ,0, 0, 0
+0726   4735 00 00 
+0727   4737 00 00 00 00     DEFB 0, 0, 0 ,0, 0, 0
+0727   473B 00 00 
+0728   473D 00 00 00 00     DEFB 0, 0, 0 ,0, 0, 0
+0728   4741 00 00 
+0729   4743 00 00 00 00     DEFB 0, 0, 0 ,0, 0, 0 
+0729   4747 00 00 
+0730   4749             deadPlayerSpritePointer
+0731   4749 00 00           DEFW 0
+0732   474B             playerSpritePointer
+0733   474B 00 00           DEFW 0 
+0734   474D             
+0735   474D             jollyRogerDirUpdate
+0736   474D 01 00           DEFW 1
+0737   474F             jollyRogerXPos
+0738   474F 00              DEFB 0
+0739   4750             jollyRogerLocation
+0740   4750 00 00           DEFW 0
+0741   4752             evenOddLoopCount
+0742   4752 00              DEFB 0
+0743   4753             gameOverRestartFlag    
+0744   4753 00              DEFB 0    
+0745   4754             LivesText
+0746   4754 31 2E 3B 2A     DEFB _L,_I,_V,_E,_S,_EQ,$ff    
+0746   4758 38 14 FF 
+0747   475B             TopLineText
+0748   475B 38 35 26 28     DEFB _S,_P,_A,_C,_E,__,_O,_U,_T,_V, _A, _D, _E, _R, _S, $ff
+0748   475F 2A 00 34 3A 
+0748   4763 39 3B 26 29 
+0748   4767 2A 37 38 FF 
+0749   476B             
+0750   476B             title_screen_txt
+0751   476B 3F 3D 24 1D 	DEFB	_Z,_X,_8,_1,__,_S,_P,_A,_C,_E,_O,_U,_T,_V,_A,_D,_E,_R,_S,$ff
+0751   476F 00 38 35 26 
+0751   4773 28 2A 34 3A 
+0751   4777 39 3B 26 29 
+0751   477B 2A 37 38 FF 
+0752   477F             keys_screen_txt_1
+0753   477F 38 00 39 34 	DEFB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,__,_P,__,_R,_I,_G,_H,_T,$ff
+0753   4783 00 38 39 26 
+0753   4787 37 39 1A 00 
+0753   478B 34 00 31 2A 
+0753   478F 2B 39 1A 00 
+0753   4793 35 00 37 2E 
+0753   4797 2C 2D 39 FF 
+0754   479B             keys_screen_txt_2
+0755   479B 00 00 00 00 	DEFB	__,__,__,__,__,__,__,_Z,__,_O,_R,__,_S,_P,_A,_C,_E,__,_EQ,__,_F,_I,_R,_E,,$ff    
+0755   479F 00 00 00 3F 
+0755   47A3 00 34 37 00 
+0755   47A7 38 35 26 28 
+0755   47AB 2A 00 14 00 
+0755   47AF 2B 2E 37 2A 
+0755   47B3 00 FF 
+0756   47B5             
+0757   47B5             game_objective_txt
+0758   47B5 39 34 00 3C 	DEFB	_T,_O,__,_W,_I,_N,__,_S,_U,_R,_V,_I,_V,_E,__, _A,_L,_L,__,_A,_L,_I,_E,_N,_S,$ff
+0758   47B9 2E 33 00 38 
+0758   47BD 3A 37 3B 2E 
+0758   47C1 3B 2A 00 26 
+0758   47C5 31 31 00 26 
+0758   47C9 31 2E 2A 33 
+0758   47CD 38 FF 
+0759   47CF             	
+0760   47CF             last_Score_txt
+0761   47CF 15 15 15 15 	DEFB 21,21,21,21,_L,_A,_S,_T,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff	
+0761   47D3 31 26 38 39 
+0761   47D7 00 00 38 28 
+0761   47DB 34 37 2A 15 
+0761   47DF 15 15 15 FF 
+0762   47E3             high_Score_txt
+0763   47E3 15 15 15 15 	DEFB 21,21,21,21,_H,_I,_G,_H,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff		
+0763   47E7 2D 2E 2C 2D 
+0763   47EB 00 00 38 28 
+0763   47EF 34 37 2A 15 
+0763   47F3 15 15 15 FF 
+0764   47F7             credits_and_version_1
+0765   47F7 00 27 3E 00 	DEFB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
+0765   47FB 26 00 35 2E 
+0765   47FF 31 30 2E 33 
+0765   4803 2C 39 34 33 
+0765   4807 00 1E 1C 1E 
+0765   480B 20 FF 
+0766   480D             credits_and_version_2
+0767   480D 00 00 3B 2A 	DEFB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_1,$ff    
+0767   4811 37 38 2E 34 
+0767   4815 33 00 3B 1C 
+0767   4819 1B 1C 1B 1D 
+0767   481D FF 
+0768   481E             credits_and_version_3
+0769   481E 00 00 00 3E 	DEFB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff       
+0769   4822 34 3A 39 3A 
+0769   4826 27 2A 0E 27 
+0769   482A 3E 39 2A 2B 
+0769   482E 34 37 2A 3B 
+0769   4832 2A 37 FF 
+0770   4835                 
+0771   4835                
+0772   4835 80          VariablesEnd:   DEFB $80
+0773   4836             BasicEnd: 
+0774   4836             #END
+0775   4836             
+tasm: Number of errors = 0
