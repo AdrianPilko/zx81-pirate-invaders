@@ -32,15 +32,9 @@
 #define         EQU  .equ
 #define         ORG  .org
 CLS				EQU $0A2A
-;;;;;#define DEBUG_NO_SCROLL
-;#define DEBUG_PLAYER_XY
-;;#define DEBUG_SPRITE_ADDRESS 1
-;;#define DEBUG_PRINT_ROOM_NUMBER 1
-;#define DEBUG_MULTIRATECOUNT 1
-;#define DEBUG_START_IN_ROOM_X   1
-;#define DEBUG_ROOM_TO_START_IN 7
-;#define DEBUG_COLLISION_DETECT_1 1
-;#define DEBUG_COLLISION_DETECT_2 1
+
+;#define DEBUG_PRINT_PIRATE_CYCLE
+#define DEBUG_PIRATE_DIR
 
 #define KEYBOARD_READ_PORT_P_TO_Y	$DF
 ; for start key 
@@ -183,6 +177,7 @@ preinit
 initVariables
     xor a
     ld a, (MissileInFlightFlag)
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
     
     ld a, (missileCountDown)
     ld a, 9
@@ -201,6 +196,24 @@ initVariables
     ld (jollyRogerDirUpdate),hl
     ld a, 5
     ld (jollyRogerXPos),a
+    
+    ld hl, 1
+    ld (pirateDirUpdate),hl
+    ld a, 5
+    ld (pirateXPos),a
+    
+
+    ld hl, Display+1 
+    ld de, 3
+    add hl, de 
+    ld (pirateTopLeftPosition), hl
+    xor a
+    ld (pirateSpriteCycleCount), a
+    ld hl, pirate3sprites
+    ld (pirateSpritesPointer), hl 
+    ld hl, 1 
+    ld (pirateDirUpdate), hl
+    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
 gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -208,6 +221,25 @@ gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 waitForTVSync	
 	call vsync
 	djnz waitForTVSync
+
+    ld a, (evenOddLoopCount)
+    inc a
+    cp 8    
+    jr z, resetEvenOddAndSetFlag
+    ld (evenOddLoopCount), a
+    xor a
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies    
+    jr continueWithGameLoop
+    
+resetEvenOddAndSetFlag    
+    xor a
+    ld (evenOddLoopCount), a
+    ld a, 1
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies
+
+continueWithGameLoop          
+    call drawMainInvaderGrid
+    
     
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
@@ -215,30 +247,17 @@ waitForTVSync
     ld b, 8 
     call drawSprite
     
-    ld hl, blankSprite
-    ld de, (previousJollyRogerLocation)
-    ld c, 8
-    ld b, 8    
-    call drawSprite    
-    call updateJollyRoger        
-    ; xor a
-    ; ld (evenOddLoopFlag), a    ; used for multi rate enemies
+    ; ld hl, blankSprite
+    ; ld de, (previousJollyRogerLocation)
+    ; ld c, 8
+    ; ld b, 8    
+    ; call drawSprite    
+    ; call updateJollyRoger    
     
-    ; ld a, (evenOddLoopCount)
-    ; inc a
-    ; ld (evenOddLoopCount), a
-    ; cp 8    
-    ; jr z, resetEvenOddAndSetFlag
     
-    jr continueWithGameLoop
-resetEvenOddAndSetFlag    
-    ; xor a
-    ; ld (evenOddLoopCount), a
-    ; ld a, 1
-    ; ld (evenOddLoopFlag), a    ; used for multi rate enemies
-    ; call drawTreasureSub    
+
     
-continueWithGameLoop          
+        
     ; call printLives   
     
         
@@ -372,13 +391,16 @@ updateRestOfScreen
     ld c, 8
     ld b, 8    
     call drawSprite
-    
+
+;; the idea is to use the skull and cross bones as an end of level "boss"
+#if 0    
     ld hl, jollyRoger
     ld de, (jollyRogerLocation)
     ld c, 8
     ld b, 8    
     call drawSprite    
     call updateJollyRoger    
+#endif    
     
     ld a, (MissileInFlightFlag)
     cp 0
@@ -414,6 +436,46 @@ noMissileUpClearMissile
 noMissileUpdate      
       ret
       
+
+updatePirateXPos   
+
+    ld a, (pirateXPos)            
+    cp 14
+    jr z, reversePirateDirToNeg
+    cp 2
+    jr z, reversePirateDirToPos
+        
+    jr endOfUpdatePirateXPos    
+    
+reversePirateDirToNeg
+    ld hl, -1 
+    ld (pirateDirUpdate), hl
+    jr endOfUpdatePirateXPos 
+    
+reversePirateDirToPos    
+    ld hl, 1 
+    ld (pirateDirUpdate), hl
+    jr endOfUpdatePirateXPos 
+    
+endOfUpdatePirateXPos
+#ifdef DEBUG_PIRATE_DIR
+    ld a,(pirateXPos)  
+    ld de, 1
+    call print_number8bits
+#endif   
+    ld hl, (pirateTopLeftPosition)
+    ;ld (previousPirateLocation), hl
+    ld de, (pirateDirUpdate)
+    add hl, de
+    ld (pirateTopLeftPosition), hl
+
+    ld hl, (pirateDirUpdate)    
+    ld a, (pirateXPos)
+    add a, l
+    ld (pirateXPos), a 
+    
+    ret
+      
 updateJollyRoger   
     ld a, (jollyRogerXPos)        
     cp 23  
@@ -447,6 +509,74 @@ endOfUpdateJollyRoger
     ld (jollyRogerXPos), a 
     
     ret
+    
+drawMainInvaderGrid
+;; we have an area of memory which will represent flags for if each of the grid of 5 rows of
+;; 5 columnsn invaders is valid (ie not been killed). This code will loop round that and 
+;; display an invader sprite if required
+    ld b, 2
+    ld hl, (pirateTopLeftPosition)
+    ld (pirateRowLeftPositionTemp), hl
+pirateRowDrawLoop    
+
+   push bc
+        
+        ld b, 4       
+pirateColDrawLoop 
+            push bc           
+                ld de, (pirateRowLeftPositionTemp)
+                ld hl, (pirateSpritesPointer)
+                ld c, 4
+                ld b, 8 
+                call drawSprite              
+                ld hl, 5
+                ld de, (pirateRowLeftPositionTemp)
+                add hl, de   
+                ld (pirateRowLeftPositionTemp), hl
+            pop bc
+            djnz pirateColDrawLoop        
+            
+            ld hl, (pirateTopLeftPosition)    
+            ld de, 231
+            add hl, de
+            ld (pirateRowLeftPositionTemp), hl
+
+   pop bc    
+   djnz pirateRowDrawLoop
+     
+   ld a, (evenOddLoopFlag)
+   cp 1
+   jr z, updatePirateSpriteCycle
+   jr endOfPirateSpriteUpdate
+   ; update the sprite to draw from the 3 cycles 
+updatePirateSpriteCycle   
+   ; update X position and reverse direction if reached end limits
+   call updatePirateXPos
+   
+   ld a, (pirateSpriteCycleCount)
+   inc a
+   cp 3
+   jr z, resetPirateSprite
+   ld (pirateSpriteCycleCount), a
+   ld hl, (pirateSpritesPointer)
+   ld de, 32
+   add hl, de
+   ld (pirateSpritesPointer), hl
+   ld a, (pirateSpriteCycleCount)     ;; currentPlayerLocation is already offset to
+#ifdef DEBUG_PRINT_PIRATE_CYCLE   
+   ld de, 1
+   call print_number8bits
+#endif   
+   jr endOfPirateSpriteUpdate
+   
+resetPirateSprite   
+   xor a
+   ld (pirateSpriteCycleCount), a
+   ld hl, pirate3sprites
+   ld (pirateSpritesPointer), hl 
+
+endOfPirateSpriteUpdate 
+   ret   
     
 
 ;;;; sprite code
@@ -661,6 +791,15 @@ jollyRoger
      DEFB	$05, $06, $00, $01, $02, $00, $86, $85, $02, $83, $00, $00,
      DEFB	$00, $00, $83, $01     
 
+pirate3sprites     ;; these are 4 by 8 bytes and is 3 in the animation = 96bytes
+    DEFB $00, $84, $07, $85, $87, $81, $82, $06, $05, $80, $80, $00,
+    DEFB $01, $07, $84, $00, $87, $05, $85, $00, $00, $00, $02, $00,
+    DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $84, $07, $00,
+    DEFB $87, $81, $82, $04, $05, $80, $80, $85, $01, $07, $84, $02,
+    DEFB $00, $05, $85, $00, $02, $01, $02, $00, $00, $00, $00, $00,
+    DEFB $00, $00, $00, $00, $05, $84, $07, $00, $86, $81, $82, $04,
+	DEFB $00, $80, $80, $85, $00, $07, $84, $02, $00, $05, $85, $00,
+	DEFB $02, $01, $02, $00, $00, $00, $00, $00, $00, $00, $00, $00
 ; used to clear current location before move    
 blankSprite
     DEFB   0,  0,  0,  0,  0,  0,  0,  0
@@ -688,7 +827,10 @@ blockFilled    ;8*10
 
 playerXPos
     DEFB 0
-
+evenOddLoopFlag
+    DEFB 0
+evenOddLoopCount    
+    DEFB 0
 enemySpriteZeroPos_ST  
     DEFW 0
 enemySpriteOnePos_ST    
@@ -746,7 +888,18 @@ deadPlayerSpritePointer
     DEFW 0
 playerSpritePointer
     DEFW 0 
-
+pirateTopLeftPosition
+    DEFW 0 
+pirateRowLeftPositionTemp
+    DEFW 0     
+pirateSpriteCycleCount    
+    DEFB 0
+pirateSpritesPointer
+    DEFW 0
+pirateDirUpdate
+    DEFW 1
+pirateXPos
+    DEFB 0    
 jollyRogerDirUpdate
     DEFW 1
 jollyRogerXPos
@@ -755,8 +908,6 @@ jollyRogerLocation
     DEFW 0
 previousJollyRogerLocation    
     DEFW 0
-evenOddLoopCount
-    DEFB 0
 gameOverRestartFlag    
     DEFB 0    
 LivesText
