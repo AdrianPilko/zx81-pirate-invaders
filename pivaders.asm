@@ -59,7 +59,7 @@ CLS				EQU $0A2A
 #define MISSILE_COUNTDOWN_INIT 9
 
 
-VSYNCLOOP       EQU      1
+VSYNCLOOP       EQU      2
 
 ; character set definition/helpers
 __:				EQU	$00	;spacja
@@ -214,6 +214,13 @@ waitForTVSync
     ld c, 8
     ld b, 8 
     call drawSprite
+    
+    ld hl, blankSprite
+    ld de, (previousJollyRogerLocation)
+    ld c, 8
+    ld b, 8    
+    call drawSprite    
+    call updateJollyRoger        
     ; xor a
     ; ld (evenOddLoopFlag), a    ; used for multi rate enemies
     
@@ -427,7 +434,9 @@ reverseDirToPos
     jr endOfUpdateJollyRoger 
     
 endOfUpdateJollyRoger    
+    
     ld hl, (jollyRogerLocation)
+    ld (previousJollyRogerLocation), hl
     ld de, (jollyRogerDirUpdate)
     add hl, de
     ld (jollyRogerLocation), hl
@@ -625,12 +634,18 @@ Display        	DEFB $76
 Variables: 
 
 playerSpriteData
-     DEFB   $00, $00, $00, $85, $05, $00, $00, $00, $00, $00, $00, $81,
-     DEFB	$82, $00, $00, $00, $00, $00, $00, $05, $85, $00, $00, $00,
-     DEFB	$00, $00, $85, $80, $80, $05, $00, $00, $05, $87, $80, $80,
-     DEFB	$80, $80, $04, $85, $82, $80, $80, $82, $81, $80, $80, $81,
-     DEFB	$07, $03, $84, $82, $81, $07, $03, $84, $00, $00, $00, $84,
-     DEFB	$07, $00, $00, $00     
+     ; DEFB   $00, $00, $00, $85, $05, $00, $00, $00, $00, $00, $00, $81, commented out but nice space fighhter ship
+     ; DEFB	$82, $00, $00, $00, $00, $00, $00, $05, $85, $00, $00, $00,
+     ; DEFB	$00, $00, $85, $80, $80, $05, $00, $00, $05, $87, $80, $80,
+     ; DEFB	$80, $80, $04, $85, $82, $80, $80, $82, $81, $80, $80, $81,
+     ; DEFB	$07, $03, $84, $82, $81, $07, $03, $84, $00, $00, $00, $84,
+     ; DEFB	$07, $00, $00, $00     
+     DEFB	$00, $00, $00, $00, $81, $04, $00, $00, $00, $00, $00, $06,
+     DEFB	$85, $00, $00, $00, $00, $00, $06, $87, $80, $82, $00, $00,
+     DEFB	$00, $06, $87, $80, $80, $80, $82, $00, $06, $00, $03, $03,
+     DEFB	$84, $00, $87, $83, $03, $82, $07, $03, $03, $03, $84, $80,
+     DEFB	$00, $02, $04, $01, $01, $01, $86, $01, $00, $00, $02, $80,
+     DEFB	$80, $80, $01, $00   
 missileData     
      DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
      DEFB	$00, $00, $00, $00, $00, $00, $00, $87, $04, $00, $00, $00,
@@ -737,6 +752,8 @@ jollyRogerDirUpdate
 jollyRogerXPos
     DEFB 0
 jollyRogerLocation
+    DEFW 0
+previousJollyRogerLocation    
     DEFW 0
 evenOddLoopCount
     DEFB 0
