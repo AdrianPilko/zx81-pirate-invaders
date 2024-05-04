@@ -445,6 +445,8 @@ updateRestOfScreen
     ld c, 4
     ld b, 4    
     call drawSprite
+        
+    call checkIfMissileHit    
        
     call updateMissilePosition
 skipMissileDraw
@@ -658,7 +660,7 @@ continueWithPirateLoop
                 ld hl, 4
                 ld de, (pirateRowLeftPositionTemp)
                 add hl, de   
-                ld (pirateRowLeftPositionTemp), hl
+                ld (pirateRowLeftPositionTemp), hl                
             pop bc
             djnz pirateColDrawLoop        
             
@@ -704,6 +706,108 @@ resetPirateSprite
 
 endOfPirateSpriteUpdate 
    ret   
+   
+   
+;; check if missile hit pirates 
+
+
+checkIfMissileHit       
+    ld hl, (pirateTopLeftPosition)
+    ld (pirateRowLeftPositionTemp), hl
+    ld a, $7f    ; setup a moving bit mask which we'll use to determine if the pirate is shot or not. this is basically all ones except the top bit is zero, this will get rotated round in the loop and used to and with the pirateValidBitMap
+    ld (pirateValidBitMapMaskTemp), a        
+    ld b, 8
+missileCheckHitLoop    
+    push bc
+        ;ld hl, (pirateRowLeftPositionTemp)   ;; debug
+        ;ld (hl), 8   ;debug
+        ld de, (pirateRowLeftPositionTemp)
+        ld hl, (currentMissilePosition)
+        
+        ; push de
+        ; push hl
+        ; push bc
+        ; push af        
+        ; ;;debug print pirateValidBitMapMaskTemp
+        ; ld a, (pirateValidBitMap)
+        ; ld de, 67
+        ; call print_number8bits
+
+        ; ld a, (pirateValidBitMapMaskTemp) 
+        ; ld de, 69
+        ; call print_number8bits        
+
+        ; pop af                        
+        ; pop bc
+        ; pop hl
+        ; pop de        
+        ; now compare upper and lower bytes of hl and de
+        ld a, h
+        cp d
+        jr nz, noHitMissile
+        ld a, l
+        cp e
+        jr nz, noHitMissile 
+        ;; missile/cannon HIT!!!
+        ld a, (pirateValidBitMapMaskTemp)        
+        ld b, a
+        ld a, (pirateValidBitMap)
+        and b
+        ld (pirateValidBitMap), a
+        
+        ; push de
+        ; push hl
+        ; push bc
+        ; push af         
+        ; ;;debug print pirateValidBitMapMaskTemp
+        ; ld a, (pirateValidBitMap)
+        ; ld de, 34
+        ; call print_number8bits
+
+        ; ld a, (pirateValidBitMapMaskTemp) 
+        ; ld de, 36
+        ; call print_number8bits
+        ; pop af                        
+        ; pop bc
+        ; pop hl
+        ; pop de     
+        
+        ;also if we have hit then disable the missile now!!
+        xor a
+        ld (MissileInFlightFlag), a
+        ld hl, 0
+        ld (currentMissilePosition), hl
+        call increaseScore
+        pop bc   ; have to do this becasue we're exiting early out of loop
+        ret ;; exit early
+noHitMissile
+        ;; update mask
+        ld a, (pirateValidBitMapMaskTemp)
+        rra 
+        ld (pirateValidBitMapMaskTemp),a
+        
+        ; now move the position to compare (ie a pirate) on 
+        
+        ld de, 4
+        ld hl, (pirateRowLeftPositionTemp)
+        add hl, de
+        ld (pirateRowLeftPositionTemp), hl
+    pop bc     
+        ld a, b  ; check the loop counter, if it's 3 then move the whole lot down by +33-16
+        cp 5
+        jr nz, endLoopLabelPriateCheck
+        ld de, 149
+        
+        ;;ld (pirateRowLeftPositionTemp), ; hl should still be set from a few lines before
+        add hl, de
+        ld (pirateRowLeftPositionTemp), hl
+        
+        ;ld (hl), 8
+        
+endLoopLabelPriateCheck
+        
+    djnz missileCheckHitLoop
+    ret
     
 
 ;;;; sprite code
