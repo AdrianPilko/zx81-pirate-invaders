@@ -34,7 +34,7 @@
 CLS				EQU $0A2A
 
 ;#define DEBUG_PRINT_PIRATE_CYCLE
-#define DEBUG_PIRATE_DIR
+;#define DEBUG_PIRATE_DIR
 
 #define KEYBOARD_READ_PORT_P_TO_Y	$DF
 ; for start key 
@@ -50,7 +50,9 @@ CLS				EQU $0A2A
 #define KEYBOARD_READ_PORT $FE 
 #define SCREEN_WIDTH 32
 #define SCREEN_HEIGHT 23   ; we can use the full screen becuase we're not using PRINT or PRINT AT ROM subroutines
-#define MISSILE_COUNTDOWN_INIT 9
+#define MISSILE_COUNTDOWN_INIT 18
+;#define PLAYER_START_POS 604
+#define PLAYER_START_POS 637
 
 
 VSYNCLOOP       EQU      2
@@ -185,7 +187,7 @@ initVariables
     ld hl, playerSpriteData
     ld (playerSpritePointer), hl 
     ld hl, Display+1 
-    ld de, 538
+    ld de, PLAYER_START_POS
     add hl, de 
     ld (currentPlayerLocation), hl
     ld hl, Display+1 
@@ -209,7 +211,8 @@ initVariables
     ld (pirateTopLeftPosition), hl
     xor a
     ld (pirateSpriteCycleCount), a
-    ld hl, pirate3sprites
+    ;ld hl, pirate3sprites
+    ld hl, pirate3sprites4x4
     ld (pirateSpritesPointer), hl 
     ld hl, 1 
     ld (pirateDirUpdate), hl
@@ -237,14 +240,14 @@ resetEvenOddAndSetFlag
     ld a, 1
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-continueWithGameLoop          
+continueWithGameLoop              
     call drawMainInvaderGrid
     
     
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
     ld c, 8
-    ld b, 8 
+    ld b, 4 
     call drawSprite
     
     ; ld hl, blankSprite
@@ -373,7 +376,7 @@ doFireMissile      ; triggered when jump key pressed just sets the
     
     ;; in power up mode we'll fire from nose and wing tips :) (note: not yet implemented) 
     ld hl, (currentPlayerLocation)
-    ld de, -264  
+    ld de, -31  
     add hl, de    
     ld (currentMissilePosition), hl
     ;;; setup the missile "Time To Live"  (like ethernet TTL right :)
@@ -389,7 +392,7 @@ updateRestOfScreen
     ld hl, (playerSpritePointer)    
     ld de, (currentPlayerLocation)
     ld c, 8
-    ld b, 8    
+    ld b, 4    
     call drawSprite
 
 ;; the idea is to use the skull and cross bones as an end of level "boss"
@@ -406,10 +409,19 @@ updateRestOfScreen
     cp 0
     jp z, skipMissileDraw
     
+    ld hl, (currentMissilePosition)
+    ld de, 33
+    add hl, de
+    ex de, hl    
+    ld hl, blankSprite
+    ld c, 4
+    ld b, 4 
+    call drawSprite    
+    
     ld hl, missileData
     ld de, (currentMissilePosition)        
-    ld c, 8
-    ld b, 8    
+    ld c, 4
+    ld b, 4    
     call drawSprite
        
     call updateMissilePosition
@@ -422,8 +434,8 @@ updateMissilePosition
       dec a
       cp 0
       jp z, noMissileUpClearMissile
-      
-      ld (missileCountDown), a
+     
+      ld (missileCountDown), a      
       
       ld hl, (currentMissilePosition)    
       ld de, -33
@@ -442,7 +454,7 @@ updatePirateXPos
     ld a, (pirateXPos)            
     cp 14
     jr z, reversePirateDirToNeg
-    cp 2
+    cp 3
     jr z, reversePirateDirToPos
         
     jr endOfUpdatePirateXPos    
@@ -450,11 +462,30 @@ updatePirateXPos
 reversePirateDirToNeg
     ld hl, -1 
     ld (pirateDirUpdate), hl
+    ;; also shove down one row
+    
+    ;before we do that we need to blank the line where the pirates "heads" were
+    
+    
+    ld hl, (pirateTopLeftPosition)
+    ld de, 33
+    add hl, de
+    ld (pirateTopLeftPosition),hl
+    
     jr endOfUpdatePirateXPos 
     
 reversePirateDirToPos    
     ld hl, 1 
     ld (pirateDirUpdate), hl
+    ;; also shove down one row
+    ;before we do that we need to blank the line where the pirates "heads" were
+    
+    
+    
+    ld hl, (pirateTopLeftPosition)
+    ld de, 33
+    add hl, de
+    ld (pirateTopLeftPosition),hl    
     jr endOfUpdatePirateXPos 
     
 endOfUpdatePirateXPos
@@ -509,11 +540,31 @@ endOfUpdateJollyRoger
     ld (jollyRogerXPos), a 
     
     ret
-    
+
+blankToLAndROfInvader
+    ld hl, (pirateTopLeftPosition)    
+    ld de, -1
+    add hl, de
+    ex de, hl
+    ld hl, enemySprite5by8Blank
+    ld c, 1
+    ld b, 9 
+    call drawSprite              
+    ld hl, (pirateTopLeftPosition)    
+    ld de, 16
+    add hl, de
+    ex de, hl
+    ld hl, enemySprite5by8Blank
+    ld c, 1
+    ld b, 9 
+    call drawSprite                  
+   ret
+   
 drawMainInvaderGrid
 ;; we have an area of memory which will represent flags for if each of the grid of 5 rows of
 ;; 5 columnsn invaders is valid (ie not been killed). This code will loop round that and 
-;; display an invader sprite if required
+;; display an invader sprite if required       
+    call blankToLAndROfInvader
     ld b, 2
     ld hl, (pirateTopLeftPosition)
     ld (pirateRowLeftPositionTemp), hl
@@ -527,9 +578,10 @@ pirateColDrawLoop
                 ld de, (pirateRowLeftPositionTemp)
                 ld hl, (pirateSpritesPointer)
                 ld c, 4
-                ld b, 8 
+                ;ld b, 8 
+                ld b, 4 
                 call drawSprite              
-                ld hl, 5
+                ld hl, 4
                 ld de, (pirateRowLeftPositionTemp)
                 add hl, de   
                 ld (pirateRowLeftPositionTemp), hl
@@ -537,7 +589,7 @@ pirateColDrawLoop
             djnz pirateColDrawLoop        
             
             ld hl, (pirateTopLeftPosition)    
-            ld de, 231
+            ld de, 165
             add hl, de
             ld (pirateRowLeftPositionTemp), hl
 
@@ -555,7 +607,7 @@ updatePirateSpriteCycle
    
    ld a, (pirateSpriteCycleCount)
    inc a
-   cp 3
+   cp 2
    jr z, resetPirateSprite
    ld (pirateSpriteCycleCount), a
    ld hl, (pirateSpritesPointer)
@@ -572,7 +624,8 @@ updatePirateSpriteCycle
 resetPirateSprite   
    xor a
    ld (pirateSpriteCycleCount), a
-   ld hl, pirate3sprites
+   ;ld hl, pirate3sprites
+   ld hl, pirate3sprites4x4
    ld (pirateSpritesPointer), hl 
 
 endOfPirateSpriteUpdate 
@@ -770,19 +823,38 @@ playerSpriteData
      ; DEFB	$80, $80, $04, $85, $82, $80, $80, $82, $81, $80, $80, $81,
      ; DEFB	$07, $03, $84, $82, $81, $07, $03, $84, $00, $00, $00, $84,
      ; DEFB	$07, $00, $00, $00     
-     DEFB	$00, $00, $00, $00, $81, $04, $00, $00, $00, $00, $00, $06,
-     DEFB	$85, $00, $00, $00, $00, $00, $06, $87, $80, $82, $00, $00,
-     DEFB	$00, $06, $87, $80, $80, $80, $82, $00, $06, $00, $03, $03,
-     DEFB	$84, $00, $87, $83, $03, $82, $07, $03, $03, $03, $84, $80,
-     DEFB	$00, $02, $04, $01, $01, $01, $86, $01, $00, $00, $02, $80,
-     DEFB	$80, $80, $01, $00   
+    ; the next one is the old 8x8 big sail ship
+    ; DEFB	$00, $00, $00, $00, $81, $04, $00, $00, $00, $00, $00, $06,
+    ; DEFB	$85, $00, $00, $00, $00, $00, $06, $87, $80, $82, $00, $00,
+    ; DEFB	$00, $06, $87, $80, $80, $80, $82, $00, $06, $00, $03, $03,
+    ; DEFB	$84, $00, $87, $83, $03, $82, $07, $03, $03, $03, $84, $80,
+    ; DEFB	$00, $02, $04, $01, $01, $01, $86, $01, $00, $00, $02, $80,
+    ; DEFB	$80, $80, $01, $00   
+    ; this is now 8 by 4
+     DEFB $00, $00, $81, $00, $00, $81, $04, $00, $00, $06, $85, $00,
+     DEFB $00, $85, $00, $00, $81, $83, $81, $83, $82, $81, $81, $80,
+     DEFB $00, $02, $81, $81, $81, $81, $82, $01, $00, $00, $00, $00,
+     DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+     DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	 DEFB $00, $00, $00, $00
+    
 missileData     
-     DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-     DEFB	$00, $00, $00, $00, $00, $00, $00, $87, $04, $00, $00, $00,
-     DEFB	$00, $00, $00, $02, $01, $00, $00, $00, $00, $00, $00, $00,
-     DEFB	$00, $00, $00, $00, $00, $00, $00, $85, $05, $00, $00, $00,
-     DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-     DEFB	$00, $00, $00, $00     
+     ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $00, $00, $00, $00, $87, $04, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $02, $01, $00, $00, $00, $00, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $00, $00, $00, $00, $85, $05, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $00     
+	DEFB $00, $87, $04, $00, $00, $02, $01, $00, $00, $00, $00, $00,
+	DEFB $00, $85, $05, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
+     
+explsion4x4     
+	DEFB $00, $86, $00, $06, $04, $87, $04, $00, $00, $02, $86, $00,
+	DEFB $87, $01, $00, $01, $00, $00, $00, $00, $00, $00, $00, $00,
+	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
 jollyRoger     
      DEFB	$87, $03, $00, $00, $00, $00, $03, $04, $05, $86, $00, $83,
      DEFB	$83, $00, $06, $85, $00, $00, $06, $04, $87, $86, $00, $00,
@@ -800,6 +872,12 @@ pirate3sprites     ;; these are 4 by 8 bytes and is 3 in the animation = 96bytes
     DEFB $00, $00, $00, $00, $05, $84, $07, $00, $86, $81, $82, $04,
 	DEFB $00, $80, $80, $85, $00, $07, $84, $02, $00, $05, $85, $00,
 	DEFB $02, $01, $02, $00, $00, $00, $00, $00, $00, $00, $00, $00
+pirate3sprites4x4       ; these are 16 bytes each 4 by 4)
+	DEFB $05, $85, $05, $00, $02, $80, $80, $86, $00, $07, $84, $02,
+	DEFB $87, $05, $85, $00, $04, $85, $05, $00, $02, $80, $80, $84,
+	DEFB $00, $07, $84, $00, $02, $01, $85, $00, $00, $85, $05, $87,
+	DEFB $06, $80, $80, $01, $01, $07, $84, $00, $87, $05, $85, $00
+    
 ; used to clear current location before move    
 blankSprite
     DEFB   0,  0,  0,  0,  0,  0,  0,  0
@@ -878,12 +956,15 @@ missileCountDown
     DEFB 0
 currentMissilePosition    
     DEFW 0
-enemySprite4by4Blank
-    DEFB 0, 0, 0 ,0, 0, 0
-    DEFB 0, 0, 0 ,0, 0, 0
-    DEFB 0, 0, 0 ,0, 0, 0
-    DEFB 0, 0, 0 ,0, 0, 0
-    DEFB 0, 0, 0 ,0, 0, 0 
+enemySprite5by8Blank
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0 
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0     
 deadPlayerSpritePointer
     DEFW 0
 playerSpritePointer
