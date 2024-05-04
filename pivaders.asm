@@ -177,6 +177,12 @@ preinit
 ;; initialise variables that are once per game load/start
 
 initVariables
+
+    ; draw top line where lives and score go
+    ld de, TopLineText
+    ld bc, 2
+    call printstring
+
     xor a
     ld a, (MissileInFlightFlag)
     ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
@@ -204,9 +210,20 @@ initVariables
     ld a, 5
     ld (pirateXPos),a
     
+    ld a, 3 
+    ld (playerLives), a
+    
+    xor a
+    ld (gameOverRestartFlag), a        
+    ld a, (score_mem_tens)
+    ld (last_score_mem_tens),a
+    ld a, (score_mem_hund)
+    ld (last_score_mem_hund),a        
+    
+    
 
     ld hl, Display+1 
-    ld de, 3
+    ld de, 36
     add hl, de 
     ld (pirateTopLeftPosition), hl
     xor a
@@ -216,6 +233,11 @@ initVariables
     ld (pirateSpritesPointer), hl 
     ld hl, 1 
     ld (pirateDirUpdate), hl
+    ld a, $ff   ; every pirate is alive
+    ;ld a, $01   ; for test only bottom right pirate is alive
+    ;ld a, $80   ; for test only top left pirate is alive    
+    ld a, $55   ; for test every other pirate is alive
+    ld (pirateValidBitMap), a
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
 gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -261,7 +283,7 @@ continueWithGameLoop
 
     
         
-    ; call printLives   
+    call printLivesAndScore   
     
         
     ld a, (gameOverRestartFlag)
@@ -463,14 +485,25 @@ reversePirateDirToNeg
     ld hl, -1 
     ld (pirateDirUpdate), hl
     ;; also shove down one row
-    
     ;before we do that we need to blank the line where the pirates "heads" were
-    
-    
+    ld de, (pirateTopLeftPosition)
+    ld hl, blankSprite
+    ld c, 16
+    ld b, 1 
+    call drawSprite
+    ld hl, (pirateTopLeftPosition)
+    ld de, 165
+    add hl, de
+    ex de, hl
+    ld hl, blankSprite
+    ld c, 16
+    ld b, 1 
+    call drawSprite
+    ;; finally move one row down
     ld hl, (pirateTopLeftPosition)
     ld de, 33
     add hl, de
-    ld (pirateTopLeftPosition),hl
+    ld (pirateTopLeftPosition),hl   
     
     jr endOfUpdatePirateXPos 
     
@@ -479,9 +512,22 @@ reversePirateDirToPos
     ld (pirateDirUpdate), hl
     ;; also shove down one row
     ;before we do that we need to blank the line where the pirates "heads" were
+    ld de, (pirateTopLeftPosition)
+    ld hl, blankSprite
+    ld c, 16
+    ld b, 1 
+    call drawSprite
+    ;; and blank the middle bit between the rows of pirates
+    ld hl, (pirateTopLeftPosition)
+    ld de, 165
+    add hl, de
+    ex de, hl
+    ld hl, blankSprite
+    ld c, 16
+    ld b, 1 
+    call drawSprite
     
-    
-    
+    ;; finally move one row down
     ld hl, (pirateTopLeftPosition)
     ld de, 33
     add hl, de
@@ -568,19 +614,47 @@ drawMainInvaderGrid
     ld b, 2
     ld hl, (pirateTopLeftPosition)
     ld (pirateRowLeftPositionTemp), hl
+    ld a, $80    ; setup a moving bit mask which we'll use to determine if the pirate is shot or not
+    ld (pirateValidBitMapMaskTemp), a
+    
+    
 pirateRowDrawLoop    
 
    push bc
         
         ld b, 4       
 pirateColDrawLoop 
-            push bc           
+            push bc 
+                ;; put some logic here to determine if the pirate was shot or not
+                
+                ld a, (pirateValidBitMapMaskTemp)
+                ld b, a
+                ld a, (pirateValidBitMap)
+                and b                
+                push af
+                rr b
+                ld a, b
+                ld (pirateValidBitMapMaskTemp),a
+                pop af
+                jr z, skipDrawThisPirate    
+                
+                
                 ld de, (pirateRowLeftPositionTemp)
                 ld hl, (pirateSpritesPointer)
                 ld c, 4
                 ;ld b, 8 
                 ld b, 4 
-                call drawSprite              
+                call drawSprite          
+                jr continueWithPirateLoop
+skipDrawThisPirate
+                ;; but draw a blank
+                ld de, (pirateRowLeftPositionTemp)
+                ld hl, blankSprite
+                ld c, 4
+                ;ld b, 8 
+                ld b, 4 
+                call drawSprite                          
+continueWithPirateLoop                
                 ld hl, 4
                 ld de, (pirateRowLeftPositionTemp)
                 add hl, de   
@@ -685,15 +759,38 @@ drawSprite_OR_ColLoop
     djnz drawSprite_OR_BACKGROUND    
     ret  
     
-; printLives
-    ; ld bc, 46
-    ; ld de, LivesText
-    ; call printstring
+printLivesAndScore
+    ld a, (playerLives)
+    ld de, 29    
+    call print_number8bits        
     
-    ; ld a, (playerLives)
-    ; ld de, 51    
-    ; call print_number8bits        
-    ; ret
+    ld bc, 12
+    ld de, score_mem_tens
+    call printNumber
+    ld bc, 10
+    ld de, score_mem_hund
+    call printNumber     
+    ret
+
+increaseScore    
+    ld a,(score_mem_tens)				; add one to score, scoring is binary coded decimal (BCD)
+	add a,1	
+	daa									; z80 daa instruction realigns for BCD after add or subtract
+	ld (score_mem_tens),a	
+	cp 153
+	jr z, addOneToHund
+	jr skipAddHund
+addOneToHund
+	ld a, 0
+	ld (score_mem_tens), a
+    ld a, (score_mem_hund)
+	add a, 1
+	daa                                   ; z80 daa instruction realigns for BCD after add or subtract
+	ld (score_mem_hund), a
+skipAddHund	
+
+    ret    
+    
     
 
       
@@ -903,6 +1000,8 @@ blockFilled    ;8*10
     DEFB   8,  8,  8,  8,  8,  8,  8,  8     
     DEFB   8,  8,  8,  8,  8,  8,  8,  8    
 
+pirateValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
+    DEFB 0
 playerXPos
     DEFB 0
 evenOddLoopFlag
@@ -973,6 +1072,8 @@ pirateTopLeftPosition
     DEFW 0 
 pirateRowLeftPositionTemp
     DEFW 0     
+pirateValidBitMapMaskTemp
+    DEFB 0
 pirateSpriteCycleCount    
     DEFB 0
 pirateSpritesPointer
@@ -981,6 +1082,16 @@ pirateDirUpdate
     DEFW 1
 pirateXPos
     DEFB 0    
+playerLives
+    DEFB 0    
+score_mem_tens
+    DEFB 0
+score_mem_hund
+    DEFB 0
+last_score_mem_tens
+    DEFB 0
+last_score_mem_hund
+    DEFB 0       
 jollyRogerDirUpdate
     DEFW 1
 jollyRogerXPos
@@ -994,10 +1105,10 @@ gameOverRestartFlag
 LivesText
     DEFB _L,_I,_V,_E,_S,_EQ,$ff    
 TopLineText
-    DEFB _S,_P,_A,_C,_E,__,_O,_U,_T,_V, _A, _D, _E, _R, _S, $ff
+    DEFB _S,_C,_O,_R,_E,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,_L,_I,_V,_E,_S,__,__,__,__,$ff
 
 title_screen_txt
-	DEFB	_Z,_X,_8,_1,__,_S,_P,_A,_C,_E,_O,_U,_T,_V,_A,_D,_E,_R,_S,$ff
+	DEFB	_Z,_X,_8,_1,__,_P,_I,_R,_A,_T,_E,__,_I,_N,_V,_A,_D,_E,_R,_S,$ff
 keys_screen_txt_1
 	DEFB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,__,_P,__,_R,_I,_G,_H,_T,$ff
 keys_screen_txt_2
