@@ -236,7 +236,7 @@ initVariables
     ld a, $ff   ; every pirate is alive
     ;ld a, $01   ; for test only bottom right pirate is alive
     ;ld a, $80   ; for test only top left pirate is alive    
-    ld a, $55   ; for test every other pirate is alive
+    ;ld a, $55   ; for test every other pirate is alive
     ld (pirateValidBitMap), a
     
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
