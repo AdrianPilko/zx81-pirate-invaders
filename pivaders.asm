@@ -171,11 +171,121 @@ Line1Text:      DEFB $ea                        ; REM
 	jp intro_title		; main entry poitn to the code ships the memory definitions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	jp intro_title		; main entry poitn to the code ships the memory definitions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+introWaitLoop
+	ld b,64
+introWaitLoop_1
+    push bc	
+    pop bc
+	djnz introWaitLoop_1
+    jp read_start_key_1     ;; have to have 2 labels as not a call return
+   
+secondIntroWaitLoop    
+   
+    ld b, 64
+introWaitLoop_2
+    push bc
+    pop bc
+    djnz introWaitLoop_2
+
+	jp read_start_key_2
+	
 intro_title
 	call CLS  ; clears screen and sets the boarder
-  
+;    ld a, (gameOverRestartFlag)
+;    cp 1
+;    call z, gameOverDeathScene
+    
+    
+    xor a
+    ld (gameOverRestartFlag), a
+        
+    ld a, (score_mem_tens)
+    ld (last_score_mem_tens),a
+    ld a, (score_mem_hund)
+    ld (last_score_mem_hund),a        
+
+    
+	ld bc,6
+	ld de,title_screen_txt
+	call printstring
+	ld bc,6+33
+	ld de,title_screen_txt
+	call printstring
+    ld bc,6+66
+	ld de,title_screen_txt
+	call printstring
+	ld bc,202    
+	ld de,keys_screen_txt_1
+	call printstring		
+    
+    ld bc,235    
+	ld de,keys_screen_txt_2
+	call printstring		
+    
+
+
+	ld bc,301
+	ld de,game_objective_boarder
+	call printstring	
+	ld bc,334
+	ld de,game_objective_txt
+	call printstring	    
+	ld bc,367
+	ld de,game_objective_boarder
+	call printstring	
+    
+	ld bc,436
+	ld de,last_Score_txt
+	call printstring	
+	
+    ld bc, 476
+    ld de, last_score_mem_hund ; load address of hundreds
+	call printNumber    
+	ld bc, 478			; bc is offset from start of display
+	ld de, last_score_mem_tens ; load address of  tens		
+	call printNumber	
+	ld bc,537	
+	ld de,credits_and_version_1
+	call printstring		
+	ld bc,569	
+	ld de,credits_and_version_2
+	call printstring	
+	ld bc,634	
+	ld de,credits_and_version_3
+	call printstring
+    ld de, 529    
+    ld hl, Display+1 
+    add hl, de        
+    ex de, hl
+    ld hl, playerSpriteData
+    ld c, 8
+    ld b, 8    
+    call drawSprite
+   
+   
+	
+read_start_key_1
+	ld a, KEYBOARD_READ_PORT_A_TO_G	
+	in a, (KEYBOARD_READ_PORT)					; read from io port	
+	bit 1, a									; check S key pressed 
+	jp nz, secondIntroWaitLoop    
+    ;; else drop into preinit then initVariables
+    jr preinit
+    
+read_start_key_2
+	ld a, KEYBOARD_READ_PORT_A_TO_G	
+	in a, (KEYBOARD_READ_PORT)					; read from io port	
+	bit 1, a									; check S key pressed 
+	jp nz, introWaitLoop
+    jr preinit  ; not really necessary
+    
+    
 preinit
 ;; initialise variables that are once per game load/start
+    call CLS
 
 initVariables
 
@@ -240,6 +350,9 @@ initVariables
     ;ld a, $55   ; for test every other pirate is alive
     ld (pirateValidBitMap), a
     
+    xor a
+    ld (goNextLevelFlag), a
+    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
 gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -247,7 +360,12 @@ gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 waitForTVSync	
 	call vsync
 	djnz waitForTVSync
+    
+    ld a, (goNextLevelFlag)
+    cp 1
+    call z, executeNextLevelStart
 
+    
     ld a, (evenOddLoopCount)
     inc a
     cp 8    
@@ -613,6 +731,20 @@ blankToLAndROfInvader
    ret
    
 drawMainInvaderGrid
+
+
+    ;; first check if any piratres are left   
+    ld b, $ff     ; set a (and then next line b to all ones)
+    ld a, (pirateValidBitMap)
+    and b
+    jr z, setWaveComplete
+    jr continueDrawPirates
+setWaveComplete    
+    ld a, 1
+    ld (goNextLevelFlag), a
+    ret
+
+continueDrawPirates    
 ;; we have an area of memory which will represent flags for if each of the grid of 5 rows of
 ;; 5 columnsn invaders is valid (ie not been killed). This code will loop round that and 
 ;; display an invader sprite if required       
@@ -806,6 +938,55 @@ noHitMissile
 endLoopLabelPriateCheck
         
     djnz missileCheckHitLoop
+    ret
+    
+
+executeNextLevelStart
+    call CLS
+    ; draw top line where lives and score go
+    ld de, TopLineText
+    ld bc, 2
+    call printstring
+
+    xor a
+    ld a, (MissileInFlightFlag)
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
+    
+    ld a, (missileCountDown)
+    ld a, 9
+    ld (playerXPos), a
+    ld hl, playerSpriteData
+    ld (playerSpritePointer), hl 
+    ld hl, Display+1 
+    ld de, PLAYER_START_POS
+    add hl, de 
+    ld (currentPlayerLocation), hl
+    
+    ld hl, 1
+    ld (pirateDirUpdate),hl
+    ld a, 5
+    ld (pirateXPos),a
+    
+    
+    ld hl, Display+1 
+    ld de, 36
+    add hl, de 
+    ld (pirateTopLeftPosition), hl
+    xor a
+    ld (pirateSpriteCycleCount), a
+    ;ld hl, pirate3sprites
+    ld hl, pirate3sprites4x4
+    ld (pirateSpritesPointer), hl 
+    ld hl, 1 
+    ld (pirateDirUpdate), hl
+    ld a, $ff   ; every pirate is alive
+    ;ld a, $01   ; for test only bottom right pirate is alive
+    ;ld a, $80   ; for test only top left pirate is alive    
+    ;ld a, $55   ; for test every other pirate is alive
+    ld (pirateValidBitMap), a
+    
+    xor a
+    ld (goNextLevelFlag), a
     ret
     
 
@@ -1207,6 +1388,9 @@ previousJollyRogerLocation
     DEFW 0
 gameOverRestartFlag    
     DEFB 0    
+goNextLevelFlag
+    DEFB 0
+    
 LivesText
     DEFB _L,_I,_V,_E,_S,_EQ,$ff    
 TopLineText
@@ -1215,13 +1399,15 @@ TopLineText
 title_screen_txt
 	DEFB	_Z,_X,_8,_1,__,_P,_I,_R,_A,_T,_E,__,_I,_N,_V,_A,_D,_E,_R,_S,$ff
 keys_screen_txt_1
-	DEFB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,__,_P,__,_R,_I,_G,_H,_T,$ff
+	DEFB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,_P,__,_R,_I,_G,_H,_T,$ff
 keys_screen_txt_2
 	DEFB	__,__,__,__,__,__,__,_Z,__,_O,_R,__,_S,_P,_A,_C,_E,__,_EQ,__,_F,_I,_R,_E,,$ff    
 
 game_objective_txt
-	DEFB	_T,_O,__,_W,_I,_N,__,_S,_U,_R,_V,_I,_V,_E,__, _A,_L,_L,__,_A,_L,_I,_E,_N,_S,$ff
-	
+	DEFB	_T,_O,__,_W,_I,_N,__,_S,_U,_R,_V,_I,_V,_E,__, _A,_L,_L,__,_P,_I,_R,_A,_T,_E,_S,$ff
+game_objective_boarder   ; I know a bit wastreful but we have a whole 16K!
+	DEFB	137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,$ff
+		
 last_Score_txt
 	DEFB 21,21,21,21,_L,_A,_S,_T,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff	
 high_Score_txt
