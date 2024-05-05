@@ -35,6 +35,7 @@ CLS				EQU $0A2A
 
 ;#define DEBUG_PRINT_PIRATE_CYCLE
 ;#define DEBUG_PIRATE_DIR
+;#define DEBUG_NO_MOVE_PIRATE  1
 
 #define KEYBOARD_READ_PORT_P_TO_Y	$DF
 ; for start key 
@@ -473,7 +474,10 @@ noMissileUpdate
       ret
       
 
-updatePirateXPos   
+updatePirateXPos
+#ifdef DEBUG_NO_MOVE_PIRATE
+    ret   
+#endif    
 
     ld a, (pirateXPos)            
     cp 14
@@ -713,64 +717,54 @@ endOfPirateSpriteUpdate
 
 checkIfMissileHit       
     ld hl, (pirateTopLeftPosition)
+    
     ld (pirateRowLeftPositionTemp), hl
-    ld a, $7f    ; setup a moving bit mask which we'll use to determine if the pirate is shot or not. this is basically all ones except the top bit is zero, this will get rotated round in the loop and used to and with the pirateValidBitMap
+    ;becasue the whole loop is setup to count down, and because we want to check the 
+    ; lower row first we need to move the "Tope left position to be the bottom right
+    ld de, 177
+    add hl, de
+    ld (pirateRowLeftPositionTemp), hl  ; this now has bottom right pirate
+    
+    ; setup a moving bit mask which we'll use to determine if the pirate 
+    ; is shot or not. this is basically all ones except the top bit is zero, 
+    ; this will get rotated round in the loop and used to and with the pirateValidBitMap
+    ld a, $fe
     ld (pirateValidBitMapMaskTemp), a        
+
+    ; this is used to and with the current mask to check if missile collision check is needed
+    ld a, $01      
+    ld (bitsetMaskPirateTemp), a  
     ld b, 8
 missileCheckHitLoop    
     push bc
-        ;ld hl, (pirateRowLeftPositionTemp)   ;; debug
-        ;ld (hl), 8   ;debug
+        ;; check if we even need to check this pirate, if not valid then skip
+        ld a, (bitsetMaskPirateTemp)        
+        ld b, a
+        ld a, (pirateValidBitMap)
+        and b
+        jr z, noHitMissile
+        
         ld de, (pirateRowLeftPositionTemp)
         ld hl, (currentMissilePosition)
         
-        ; push de
-        ; push hl
-        ; push bc
-        ; push af        
-        ; ;;debug print pirateValidBitMapMaskTemp
-        ; ld a, (pirateValidBitMap)
-        ; ld de, 67
-        ; call print_number8bits
-
-        ; ld a, (pirateValidBitMapMaskTemp) 
-        ; ld de, 69
-        ; call print_number8bits        
-
-        ; pop af                        
-        ; pop bc
-        ; pop hl
-        ; pop de        
         ; now compare upper and lower bytes of hl and de
         ld a, h
         cp d
-        jr nz, noHitMissile
+        jr z, checkNextPirateMissileHit
+        jr noHitMissile 
+checkNextPirateMissileHit        
         ld a, l
         cp e
-        jr nz, noHitMissile 
+        jr z, MissileHitPirate 
+        jr noHitMissile 
+MissileHitPirate
         ;; missile/cannon HIT!!!
+        
         ld a, (pirateValidBitMapMaskTemp)        
         ld b, a
         ld a, (pirateValidBitMap)
         and b
-        ld (pirateValidBitMap), a
-        
-        ; push de
-        ; push hl
-        ; push bc
-        ; push af         
-        ; ;;debug print pirateValidBitMapMaskTemp
-        ; ld a, (pirateValidBitMap)
-        ; ld de, 34
-        ; call print_number8bits
-
-        ; ld a, (pirateValidBitMapMaskTemp) 
-        ; ld de, 36
-        ; call print_number8bits
-        ; pop af                        
-        ; pop bc
-        ; pop hl
-        ; pop de     
+        ld (pirateValidBitMap), a 
         
         ;also if we have hit then disable the missile now!!
         xor a
@@ -781,14 +775,22 @@ missileCheckHitLoop
         pop bc   ; have to do this becasue we're exiting early out of loop
         ret ;; exit early
 noHitMissile
-        ;; update mask
+        ;; update mask which is the only bit not set we check next
+        ;; e.g second pirate is 0x10111111
         ld a, (pirateValidBitMapMaskTemp)
-        rra 
+        ;rra 
+        rlc a
         ld (pirateValidBitMapMaskTemp),a
         
-        ; now move the position to compare (ie a pirate) on 
+        ;; update the mask which is the bit we're setting set all others z80
+        ;; e.g second pirate is 0x01000000
+        ld a, (bitsetMaskPirateTemp)
+        ;rra 
+        rlc a
+        ld (bitsetMaskPirateTemp), a 
         
-        ld de, 4
+        ; now move the position to compare (ie a pirate) 
+        ld de, -4
         ld hl, (pirateRowLeftPositionTemp)
         add hl, de
         ld (pirateRowLeftPositionTemp), hl
@@ -796,13 +798,10 @@ noHitMissile
         ld a, b  ; check the loop counter, if it's 3 then move the whole lot down by +33-16
         cp 5
         jr nz, endLoopLabelPriateCheck
-        ld de, 149
+        ld de, -149
         
-        ;;ld (pirateRowLeftPositionTemp), ; hl should still be set from a few lines before
         add hl, de
         ld (pirateRowLeftPositionTemp), hl
-        
-        ;ld (hl), 8
         
 endLoopLabelPriateCheck
         
@@ -1177,6 +1176,8 @@ pirateTopLeftPosition
 pirateRowLeftPositionTemp
     DEFW 0     
 pirateValidBitMapMaskTemp
+    DEFB 0
+bitsetMaskPirateTemp
     DEFB 0
 pirateSpriteCycleCount    
     DEFB 0
