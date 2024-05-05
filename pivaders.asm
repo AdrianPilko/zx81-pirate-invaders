@@ -297,6 +297,8 @@ initVariables
     xor a
     ld a, (MissileInFlightFlag)
     ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
+    ld (nextPirateToFireIndex), a
+    ld (restartLevelFlag), a
     
     ld a, (missileCountDown)
     ld a, 9
@@ -323,6 +325,13 @@ initVariables
     
     ld a, 3 
     ld (playerLives), a
+    
+    ld a, 8
+    ld (levelCountDown), a
+    
+    ld a, $01
+    daa
+    ld (gameLevel), a
     
     xor a
     ld (gameOverRestartFlag), a        
@@ -365,10 +374,16 @@ waitForTVSync
     cp 1
     call z, executeNextLevelStart
 
+    ld a, (restartLevelFlag)
+    cp 1
+    call z, executeRestartLevel
     
+
+    ld a, (levelCountDown)
+    ld b, a
     ld a, (evenOddLoopCount)
     inc a
-    cp 8    
+    cp b    
     jr z, resetEvenOddAndSetFlag
     ld (evenOddLoopCount), a
     xor a
@@ -381,8 +396,18 @@ resetEvenOddAndSetFlag
     ld a, 1
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-continueWithGameLoop              
+continueWithGameLoop        
+
+      
+    ld a, (gameOverRestartFlag)
+    cp 1
+    jp z, intro_title
+    
+    call setRandomPirateToShoot   ; this sets nextPirateToFireIndex
+
     call drawMainInvaderGrid
+    
+    call pirateFire   ; this will use and nextPirateToFireIndex also check pirateFiringFlag
     
     
     ld de, (currentPlayerLocation)
@@ -403,12 +428,7 @@ continueWithGameLoop
     
         
     call printLivesAndScore   
-    
-        
-    ld a, (gameOverRestartFlag)
-    cp 1
-    jp z, intro_title
-    
+       
     ;call blankEnemySprites
     ;call drawEnemySprites        
     ;call updateEnemySpritePositions
@@ -571,6 +591,11 @@ updateRestOfScreen
 skipMissileDraw
     
     jp gameLoop
+    
+
+pirateFire
+    ret
+    
     
 updateMissilePosition
       ld a, (missileCountDown)
@@ -738,10 +763,37 @@ drawMainInvaderGrid
     ld a, (pirateValidBitMap)
     and b
     jr z, setWaveComplete
-    jr continueDrawPirates
+    jr checkIfPlayerHitPirates
 setWaveComplete    
     ld a, 1
     ld (goNextLevelFlag), a
+    ret
+
+checkIfPlayerHitPirates    
+    ;; second check if the bottom pirate has reached the lowest line
+    ;; if so restart the level and decrease score by 1
+    
+    ;; TODO first version will only check the top left most has reach low point
+    ;; need logic to check if any bottom row pirates left if so let it go lower
+    ld hl, (pirateTopLeftPosition)
+    ld (pirateRowLeftPositionTemp), hl 
+    ld hl, Display+1
+    ld de, $018e   ; $018e is the offset to the lowest row the pirates should be able to get
+    add hl, de
+    ex de, hl
+    ld hl, (pirateRowLeftPositionTemp) ;; reload hl with pirateRowLeftPositionTemp   
+    ld a, h
+    cp d
+    jr z, checkNextPirateLowest
+    jr continueDrawPirates 
+checkNextPirateLowest        
+    ld a, l
+    cp e
+    jr z, pirateReachedLowest 
+    jr continueDrawPirates 
+pirateReachedLowest
+    ld a, 1
+    ld (restartLevelFlag), a
     ret
 
 continueDrawPirates    
@@ -940,6 +992,66 @@ endLoopLabelPriateCheck
     djnz missileCheckHitLoop
     ret
     
+    
+executeRestartLevel    
+    call CLS
+    ; draw top line where lives and score go
+    ld de, TopLineText
+    ld bc, 2
+    call printstring
+    
+    ld a, (playerLives)
+    dec a
+    cp 0
+    jr z, setGameOverFlag    
+    ld (playerLives), a
+    jr skipGameOverFlagSet
+setGameOverFlag    
+    ld a, 1
+    ld (gameOverRestartFlag), a
+    ret 
+skipGameOverFlagSet       
+    xor a
+    ld a, (MissileInFlightFlag)
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
+    
+    ld a, (missileCountDown)
+    ld a, 9
+    ld (playerXPos), a
+    ld hl, playerSpriteData
+    ld (playerSpritePointer), hl 
+    ld hl, Display+1 
+    ld de, PLAYER_START_POS
+    add hl, de 
+    ld (currentPlayerLocation), hl
+    
+    ld hl, 1
+    ld (pirateDirUpdate),hl
+    ld a, 5
+    ld (pirateXPos),a
+    
+    
+    ld hl, Display+1 
+    ld de, 36
+    add hl, de 
+    ld (pirateTopLeftPosition), hl
+    xor a
+    ld (pirateSpriteCycleCount), a
+    ;ld hl, pirate3sprites
+    ld hl, pirate3sprites4x4
+    ld (pirateSpritesPointer), hl 
+    ld hl, 1 
+    ld (pirateDirUpdate), hl
+    ld a, $ff   ; every pirate is alive
+    ;ld a, $01   ; for test only bottom right pirate is alive
+    ;ld a, $80   ; for test only top left pirate is alive    
+    ;ld a, $55   ; for test every other pirate is alive
+    ld (pirateValidBitMap), a
+    
+    xor a
+    ld (restartLevelFlag), a
+    ret
+
 
 executeNextLevelStart
     call CLS
@@ -947,6 +1059,19 @@ executeNextLevelStart
     ld de, TopLineText
     ld bc, 2
     call printstring
+    
+    ld a, (gameLevel)
+    inc a 
+    daa     ; convert to binary coded decimal to ease the display
+    ld (gameLevel), a
+    
+    ld a, (levelCountDown)
+    dec a
+    cp 1
+    jp z, skipStoreLevelCountDown
+    ;; could use this to start end end of level boss for now just hold at zero
+    ld (levelCountDown), a
+skipStoreLevelCountDown    
 
     xor a
     ld a, (MissileInFlightFlag)
@@ -1048,12 +1173,18 @@ printLivesAndScore
     ld de, 29    
     call print_number8bits        
     
-    ld bc, 12
+    ld bc, 11
     ld de, score_mem_tens
     call printNumber
-    ld bc, 10
+
+    ld bc, 9
     ld de, score_mem_hund
     call printNumber     
+       
+    ld a, (gameLevel)
+    ld de, 20
+    call print_number8bits   
+    
     ret
 
 increaseScore    
@@ -1074,8 +1205,16 @@ addOneToHund
 skipAddHund	
 
     ret    
-    
-    
+
+setRandomPirateToShoot
+tryAnotherRCol                          ; generate random number between 0 and 3 inclusive
+    ld a, r                             
+    and %00000011
+    cp 4    
+    jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 4 again    
+    inc a                               ; inc guarntees range 1 to 30 for col
+    ld (nextPirateToFireIndex), a    
+    ret
 
       
 ; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
@@ -1219,17 +1358,26 @@ playerSpriteData
      DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
 	 DEFB $00, $00, $00, $00
     
-missileData     
+missileData    
+    ;; small cannon ball 
+    DEFB $00, $00, $00, $00, $00, $81, $86, $00, $00, $84, $07, $00,
+	DEFB $00, $00, $00, $00
      ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
      ;DEFB	$00, $00, $00, $00, $00, $00, $00, $87, $04, $00, $00, $00,
      ;DEFB	$00, $00, $00, $02, $01, $00, $00, $00, $00, $00, $00, $00,
      ;DEFB	$00, $00, $00, $00, $00, $00, $00, $85, $05, $00, $00, $00,
      ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
      ;DEFB	$00, $00, $00, $00     
-	DEFB $00, $87, $04, $00, $00, $02, $01, $00, $00, $00, $00, $00,
-	DEFB $00, $85, $05, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
+	
+	;DEFB $00, $87, $04, $00, $00, $02, $01, $00, $00, $00, $00, $00,
+	;DEFB $00, $85, $05, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	;DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	;DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
+    
+    ;; big cannon ball
+    ;DEFB $00, $81, $86, $00, $81, $80, $82, $86, $84, $80, $07, $06,
+	;DEFB $00, $84, $06, $00
+    
      
 explsion4x4     
 	DEFB $00, $86, $00, $06, $04, $87, $04, $00, $00, $02, $86, $00,
@@ -1285,6 +1433,10 @@ blockFilled    ;8*10
     DEFB   8,  8,  8,  8,  8,  8,  8,  8    
 
 pirateValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
+    DEFB 0    
+nextPirateToFireIndex
+    DEFB 0
+pirateFiringFlag    
     DEFB 0
 playerXPos
     DEFB 0
@@ -1339,6 +1491,12 @@ missileCountDown
     DEFB 0
 currentMissilePosition    
     DEFW 0
+levelCountDown
+    DEFB 0
+gameLevel
+    DEFB 0
+restartLevelFlag
+    DEFB 0
 enemySprite5by8Blank
     DEFB 0, 0, 0 ,0, 0
     DEFB 0, 0, 0 ,0, 0
@@ -1394,7 +1552,7 @@ goNextLevelFlag
 LivesText
     DEFB _L,_I,_V,_E,_S,_EQ,$ff    
 TopLineText
-    DEFB _S,_C,_O,_R,_E,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,_L,_I,_V,_E,_S,__,__,__,__,$ff
+    DEFB _S,_C,_O,_R,_E,_CL,__,__,__,__,__,__,__,_L,_E,_V,_E,_L,_CL,__,__,__,_L,_I,_V,_E,_S,_CL,__,__,__,$ff
 
 title_screen_txt
 	DEFB	_Z,_X,_8,_1,__,_P,_I,_R,_A,_T,_E,__,_I,_N,_V,_A,_D,_E,_R,_S,$ff
@@ -1405,7 +1563,7 @@ keys_screen_txt_2
 
 game_objective_txt
 	DEFB	_T,_O,__,_W,_I,_N,__,_S,_U,_R,_V,_I,_V,_E,__, _A,_L,_L,__,_P,_I,_R,_A,_T,_E,_S,$ff
-game_objective_boarder   ; I know a bit wastreful but we have a whole 16K!
+game_objective_boarder   ; I know a bit wasteful but we have a whole 16K!
 	DEFB	137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,$ff
 		
 last_Score_txt
