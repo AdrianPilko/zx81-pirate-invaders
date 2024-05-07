@@ -1609,7 +1609,7 @@ high_Score_txt
 credits_and_version_1
 	DEFB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
 credits_and_version_2
-	DEFB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_3,_DT,_0,$ff    
+	DEFB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_4,_DT,_0,$ff    
 credits_and_version_3
 	DEFB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff       
     
