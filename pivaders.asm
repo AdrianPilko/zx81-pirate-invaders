@@ -957,6 +957,34 @@ MissileHitPirate
         ld (currentMissilePosition), hl
         call increaseScore
         pop bc   ; have to do this becasue we're exiting early out of loop
+        
+        ;; let's draw an explosion and tombstone breifly 
+        ld b, 3
+        ld hl, explsion4x4
+explosionDrawLoop        
+        push bc 
+            push hl
+                ld de, (pirateRowLeftPositionTemp)
+                ld c, 4
+                ld b, 4                    
+                call drawSprite
+                ld b, 32
+explosionDelayLoop  
+                push bc 
+                ld b, 64                 
+explosionDelayLoop2                
+                    
+                    djnz explosionDelayLoop2
+                    
+                pop bc 
+                djnz explosionDelayLoop
+            pop hl
+            ld de, 16
+            add hl, de         
+        pop bc 
+        djnz explosionDrawLoop
+        
+        
         ret ;; exit early
 noHitMissile
         ;; update mask which is the only bit not set we check next
@@ -989,7 +1017,12 @@ noHitMissile
         
 endLoopLabelPriateCheck
         
-    djnz missileCheckHitLoop
+    ;djnz missileCheckHitLoop
+    ld a, b
+    dec a
+    ld b, a
+    cp 0
+    jp nz, missileCheckHitLoop
     ret
     
     
@@ -1379,11 +1412,14 @@ missileData
 	;DEFB $00, $84, $06, $00
     
      
-explsion4x4     
-	DEFB $00, $86, $00, $06, $04, $87, $04, $00, $00, $02, $86, $00,
-	DEFB $87, $01, $00, $01, $00, $00, $00, $00, $00, $00, $00, $00,
-	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
+explsion4x4     ;4x4 and 5 frames total of animation (80bytes)
+	DEFB $87, $87, $01, $04, $04, $04, $87, $87, $00, $06, $86, $00,
+	DEFB $87, $05, $02, $00, $01, $00, $02, $02, $04, $04, $00, $86,
+	DEFB $87, $00, $87, $00, $87, $01, $00, $01, $00, $85, $05, $00,
+	DEFB $85, $80, $80, $05, $00, $85, $05, $00, $00, $85, $05, $00,
+	DEFB $00, $85, $05, $00, $85, $80, $80, $05, $00, $85, $05, $00,
+	DEFB $00, $85, $05, $00, $00, $85, $05, $00, $85, $80, $80, $05,
+	DEFB $00, $85, $05, $00, $00, $85, $05, $00
 jollyRoger     
      DEFB	$87, $03, $00, $00, $00, $00, $03, $04, $05, $86, $00, $83,
      DEFB	$83, $00, $06, $85, $00, $00, $06, $04, $87, $86, $00, $00,
