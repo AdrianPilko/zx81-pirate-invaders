@@ -36,6 +36,7 @@ CLS				EQU $0A2A
 ;#define DEBUG_PRINT_PIRATE_CYCLE
 ;#define DEBUG_PIRATE_DIR
 ;#define DEBUG_NO_MOVE_PIRATE  1
+#define DEBUG_START_PIRATES_LOWER
 
 #define KEYBOARD_READ_PORT_P_TO_Y	$DF
 ; for start key 
@@ -206,7 +207,9 @@ intro_title
     ld (last_score_mem_tens),a
     ld a, (score_mem_hund)
     ld (last_score_mem_hund),a        
-
+    ld (sharkPosX), a
+    ld (sharkValid), a
+    ld (sharkBonusCountUp), a
     
 	ld bc,6
 	ld de,title_screen_txt
@@ -343,7 +346,11 @@ initVariables
     
 
     ld hl, Display+1 
+#ifdef DEBUG_START_PIRATES_LOWER
+    ld de, 366
+#else    
     ld de, 36
+#endif    
     add hl, de 
     ld (pirateTopLeftPosition), hl
     xor a
@@ -402,6 +409,11 @@ continueWithGameLoop
     ld a, (gameOverRestartFlag)
     cp 1
     jp z, intro_title
+    
+    
+    ld a, (sharkValid)
+    cp 1
+    call z, drawSharkBonus   
     
     call setRandomPirateToShoot   ; this sets nextPirateToFireIndex
 
@@ -631,6 +643,21 @@ updatePirateXPos
     jr endOfUpdatePirateXPos    
     
 reversePirateDirToNeg
+    ld a, (sharkBonusCountUp)
+    inc a
+    ld (sharkBonusCountUp), a
+    cp 2
+    jr z, triggerShark
+    jr notriggerShark
+triggerShark    
+    xor a
+    ld (sharkBonusCountUp), a
+    ld a, 24
+    ld (sharkPosX), a
+    ld a, 1
+    ld (sharkValid), a
+    
+notriggerShark    
     ld hl, -1 
     ld (pirateDirUpdate), hl
     ;; also shove down one row
@@ -1026,12 +1053,58 @@ endLoopLabelPriateCheck
     ret
     
     
-executeRestartLevel    
+executeRestartLevel  
     call CLS
     ; draw top line where lives and score go
     ld de, TopLineText
     ld bc, 2
     call printstring
+    call printLivesAndScore
+           
+    ;; drew player death animation 
+    ld hl, playerHitSprite
+    ld (deadPlayerSpritePointer), hl 
+    ld b,5
+playerDeathLoop
+    push bc
+        ld de, (currentPlayerLocation)        
+        ld hl, (deadPlayerSpritePointer)        
+        push hl
+            ld c, 8
+            ld b, 4 
+            call drawSprite
+        pop hl 
+        ld de, 32
+        add hl, de
+        ld (deadPlayerSpritePointer), hl
+        
+        ld b, 64
+playerDeathDelayLoop  
+        push bc 
+        ld b, 255                
+playerDeathDelayLoop2                            
+            djnz playerDeathDelayLoop2            
+        pop bc 
+        djnz playerDeathDelayLoop
+    pop bc
+    djnz playerDeathLoop
+
+        ld b, 255
+playerDeathDelayLoop3  
+        push bc 
+        ld b, 255                
+playerDeathDelayLoop4                            
+            djnz playerDeathDelayLoop4
+        pop bc 
+        djnz playerDeathDelayLoop3
+        
+        
+    call CLS
+    ; draw top line where lives and score go
+    ld de, TopLineText
+    ld bc, 2
+    call printstring
+    call printLivesAndScore
     
     ld a, (playerLives)
     dec a
@@ -1083,6 +1156,8 @@ skipGameOverFlagSet
     
     xor a
     ld (restartLevelFlag), a
+    ld (sharkValid), a
+    ld (sharkBonusCountUp), a
     ret
 
 
@@ -1145,6 +1220,71 @@ skipStoreLevelCountDown
     
     xor a
     ld (goNextLevelFlag), a
+    ld (sharkValid), a
+    ld (sharkBonusCountUp), a    
+    ret
+    
+checkForSharkHit
+    ret
+    
+drawSharkBonus
+    xor a
+    ld d, a
+    ld a, (sharkPosX)
+    ld e, a
+    ld hl, Display+1
+    add hl, de    
+    ld de, 33
+    add hl, de   
+    ex de, hl    
+    ld hl, blankSprite
+    ld c, 8
+    ld b, 4 
+    call drawSprite
+
+
+    ld a, (sharkPosX)
+    dec a
+    cp 1
+    jr z, noDrawSharkAndSetInvalid
+    ld (sharkPosX), a 
+
+    
+    
+    xor a
+    ld d, a
+    ld a, (sharkPosX)
+    ld e, a
+    ld hl, Display+1
+    add hl, de    
+    ld de, 33
+    add hl, de    
+    ex de, hl
+    ld hl, sharkBonusSprite
+    ld c, 8
+    ld b, 4 
+    call drawSprite
+    jr endDrawSharkBonus
+noDrawSharkAndSetInvalid
+    xor a
+    ld (sharkValid), a
+    ld a, 1
+    ld (sharkPosX), a
+    xor a
+    ld d, a
+    ld a, (sharkPosX)
+    ld e, a
+    ld hl, Display+1
+    add hl, de    
+    ld de, 33
+    add hl, de    
+    ld hl, blankSprite
+    ld c, 8
+    ld b, 4 
+    call drawSprite
+    
+    
+endDrawSharkBonus   
     ret
     
 
@@ -1410,6 +1550,15 @@ missileData
     ;; big cannon ball
     ;DEFB $00, $81, $86, $00, $81, $80, $82, $86, $84, $80, $07, $06,
 	;DEFB $00, $84, $06, $00
+sharkBonusSprite    ; 96 bytes , 8x4 characters times 3 frames    
+	DEFB $00, $00, $87, $80, $00, $00, $00, $87, $83, $07, $80, $80,
+	DEFB $80, $83, $83, $01, $80, $80, $80, $80, $80, $80, $03, $04,
+	DEFB $00, $03, $00, $02, $04, $00, $00, $02, $00, $00, $87, $80,
+	DEFB $00, $00, $00, $87, $83, $07, $80, $80, $80, $83, $83, $07,
+	DEFB $02, $80, $80, $80, $80, $80, $03, $82, $03, $03, $00, $84,
+	DEFB $00, $00, $00, $02, $00, $00, $87, $80, $00, $00, $00, $83,
+	DEFB $83, $80, $80, $80, $80, $83, $83, $05, $81, $80, $80, $80,
+	DEFB $80, $80, $03, $05, $00, $03, $00, $86, $00, $00, $00, $03    
     
      
 explsion4x4     ;4x4 and 5 frames total of animation (80bytes)
@@ -1427,7 +1576,23 @@ jollyRoger
      DEFB	$83, $01, $00, $00, $00, $00, $04, $07, $84, $87, $00, $00,
      DEFB	$05, $06, $00, $01, $02, $00, $86, $85, $02, $83, $00, $00,
      DEFB	$00, $00, $83, $01     
-
+     
+playerHitSprite        ; 16x8 "pixels" 8x4 characters (bytes) times 4 frames animation
+    DEFB $04, $04, $83, $02, $87, $02, $00, $02, $04, $00, $87, $00,
+    DEFB $00, $01, $02, $00, $87, $87, $02, $87, $05, $06, $81, $86,
+    DEFB $00, $02, $81, $81, $81, $81, $82, $01, $01, $01, $04, $02,
+    DEFB $00, $00, $00, $87, $04, $87, $00, $00, $00, $01, $87, $00,
+    DEFB $87, $87, $00, $00, $00, $00, $00, $00, $00, $00, $06, $00,
+    DEFB $00, $01, $00, $87, $00, $01, $00, $01, $00, $87, $00, $87,
+    DEFB $00, $00, $00, $00, $00, $00, $00, $00, $04, $00, $00, $00,
+    DEFB $00, $00, $00, $02, $00, $00, $00, $00, $00, $00, $00, $00,
+    DEFB $07, $84, $85, $03, $04, $07, $86, $85, $05, $85, $85, $00,
+    DEFB $05, $05, $85, $85, $07, $84, $85, $03, $04, $07, $86, $02,
+    DEFB $01, $02, $02, $00, $01, $01, $02, $02, $00, $80, $00, $00,
+    DEFB $00, $85, $05, $00, $00, $00, $85, $84, $84, $00, $00, $00,
+    DEFB $00, $00, $06, $82, $07, $04, $00, $00, $00, $80, $00, $01,
+	DEFB $01, $85, $05, $00
+  
 pirate3sprites     ;; these are 4 by 8 bytes and is 3 in the animation = 96bytes
     DEFB $00, $84, $07, $85, $87, $81, $82, $06, $05, $80, $80, $00,
     DEFB $01, $07, $84, $00, $87, $05, $85, $00, $00, $00, $02, $00,
@@ -1541,9 +1706,16 @@ enemySprite5by8Blank
     DEFB 0, 0, 0 ,0, 0 
     DEFB 0, 0, 0 ,0, 0
     DEFB 0, 0, 0 ,0, 0
-    DEFB 0, 0, 0 ,0, 0     
+    DEFB 0, 0, 0 ,0, 0    
+
+sharkPosX
+    DEFB 0
+sharkValid
+    DEFB 0    
+sharkBonusCountUp
+    DEFB 0
 deadPlayerSpritePointer
-    DEFW 0
+    DEFW 0   
 playerSpritePointer
     DEFW 0 
 pirateTopLeftPosition
@@ -1609,7 +1781,7 @@ high_Score_txt
 credits_and_version_1
 	DEFB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
 credits_and_version_2
-	DEFB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_4,_DT,_0,$ff    
+	DEFB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_0,$ff    
 credits_and_version_3
 	DEFB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff       
     

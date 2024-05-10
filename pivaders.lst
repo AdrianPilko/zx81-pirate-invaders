@@ -35,1438 +35,2142 @@
 0035   0000             
 0036   0000             ;#define DEBUG_PRINT_PIRATE_CYCLE
 0037   0000             ;#define DEBUG_PIRATE_DIR
-0038   0000             
-0039   0000             #define KEYBOARD_READ_PORT_P_TO_Y	$DF
-0040   0000             ; for start key 
-0041   0000             #define KEYBOARD_READ_PORT_A_TO_G	$FD
-0042   0000             ; keyboard port for shift key to v
-0043   0000             #define KEYBOARD_READ_PORT_SHIFT_TO_V $FE
-0044   0000             ; keyboard space to b
-0045   0000             #define KEYBOARD_READ_PORT_SPACE_TO_B $7F 
-0046   0000             ; keyboard q to t
-0047   0000             #define KEYBOARD_READ_PORT_Q_TO_T $FB
-0048   0000             
-0049   0000             ; starting port numbner for keyboard, is same as first port for shift to v
-0050   0000             #define KEYBOARD_READ_PORT $FE 
-0051   0000             #define SCREEN_WIDTH 32
-0052   0000             #define SCREEN_HEIGHT 23   ; we can use the full screen becuase we're not using PRINT or PRINT AT ROM subroutines
-0053   0000             #define MISSILE_COUNTDOWN_INIT 18
-0054   0000             ;#define PLAYER_START_POS 604
-0055   0000             #define PLAYER_START_POS 637
-0056   0000             
-0057   0000             
-0058   0000             VSYNCLOOP       EQU      2
+0038   0000             ;#define DEBUG_NO_MOVE_PIRATE  1
+0039   0000             #define DEBUG_START_PIRATES_LOWER
+0040   0000             
+0041   0000             #define KEYBOARD_READ_PORT_P_TO_Y	$DF
+0042   0000             ; for start key 
+0043   0000             #define KEYBOARD_READ_PORT_A_TO_G	$FD
+0044   0000             ; keyboard port for shift key to v
+0045   0000             #define KEYBOARD_READ_PORT_SHIFT_TO_V $FE
+0046   0000             ; keyboard space to b
+0047   0000             #define KEYBOARD_READ_PORT_SPACE_TO_B $7F 
+0048   0000             ; keyboard q to t
+0049   0000             #define KEYBOARD_READ_PORT_Q_TO_T $FB
+0050   0000             
+0051   0000             ; starting port numbner for keyboard, is same as first port for shift to v
+0052   0000             #define KEYBOARD_READ_PORT $FE 
+0053   0000             #define SCREEN_WIDTH 32
+0054   0000             #define SCREEN_HEIGHT 23   ; we can use the full screen becuase we're not using PRINT or PRINT AT ROM subroutines
+0055   0000             #define MISSILE_COUNTDOWN_INIT 18
+0056   0000             ;#define PLAYER_START_POS 604
+0057   0000             #define PLAYER_START_POS 637
+0058   0000             
 0059   0000             
-0060   0000             ; character set definition/helpers
-0061   0000             __:				EQU	$00	;spacja
-0062   0000             _QT:			EQU	$0B	;"
-0063   0000             _PD:			EQU	$0C	;funt 
-0064   0000             _SD:			EQU	$0D	;$
-0065   0000             _CL:			EQU	$0E	;:
-0066   0000             _QM:			EQU	$0F	;?
-0067   0000             _OP:			EQU	$10	;(
-0068   0000             _CP:			EQU	$11	;)
-0069   0000             _GT:			EQU	$12	;>
-0070   0000             _LT:			EQU	$13	;<
-0071   0000             _EQ:			EQU	$14	;=
-0072   0000             _PL:			EQU	$15	;+
-0073   0000             _MI:			EQU	$16	;-
-0074   0000             _AS:			EQU	$17	;*
-0075   0000             _SL:			EQU	$18	;/
-0076   0000             _SC:			EQU	$19	;;
-0077   0000             _CM:			EQU	$1A	;,
-0078   0000             _DT:			EQU	$1B	;.
-0079   0000             _NL:			EQU	$76	;NEWLINE
-0080   0000             
-0081   0000             _BL             EQU $80; solid block
+0060   0000             VSYNCLOOP       EQU      2
+0061   0000             
+0062   0000             ; character set definition/helpers
+0063   0000             __:				EQU	$00	;spacja
+0064   0000             _QT:			EQU	$0B	;"
+0065   0000             _PD:			EQU	$0C	;funt 
+0066   0000             _SD:			EQU	$0D	;$
+0067   0000             _CL:			EQU	$0E	;:
+0068   0000             _QM:			EQU	$0F	;?
+0069   0000             _OP:			EQU	$10	;(
+0070   0000             _CP:			EQU	$11	;)
+0071   0000             _GT:			EQU	$12	;>
+0072   0000             _LT:			EQU	$13	;<
+0073   0000             _EQ:			EQU	$14	;=
+0074   0000             _PL:			EQU	$15	;+
+0075   0000             _MI:			EQU	$16	;-
+0076   0000             _AS:			EQU	$17	;*
+0077   0000             _SL:			EQU	$18	;/
+0078   0000             _SC:			EQU	$19	;;
+0079   0000             _CM:			EQU	$1A	;,
+0080   0000             _DT:			EQU	$1B	;.
+0081   0000             _NL:			EQU	$76	;NEWLINE
 0082   0000             
-0083   0000             _0				EQU $1C
-0084   0000             _1				EQU $1D
-0085   0000             _2				EQU $1E
-0086   0000             _3				EQU $1F
-0087   0000             _4				EQU $20
-0088   0000             _5				EQU $21
-0089   0000             _6				EQU $22
-0090   0000             _7				EQU $23
-0091   0000             _8				EQU $24
-0092   0000             _9				EQU $25
-0093   0000             _A				EQU $26
-0094   0000             _B				EQU $27
-0095   0000             _C				EQU $28
-0096   0000             _D				EQU $29
-0097   0000             _E				EQU $2A
-0098   0000             _F				EQU $2B
-0099   0000             _G				EQU $2C
-0100   0000             _H				EQU $2D
-0101   0000             _I				EQU $2E
-0102   0000             _J				EQU $2F
-0103   0000             _K				EQU $30
-0104   0000             _L				EQU $31
-0105   0000             _M				EQU $32
-0106   0000             _N				EQU $33
-0107   0000             _O				EQU $34
-0108   0000             _P				EQU $35
-0109   0000             _Q				EQU $36
-0110   0000             _R				EQU $37
-0111   0000             _S				EQU $38
-0112   0000             _T				EQU $39
-0113   0000             _U				EQU $3A
-0114   0000             _V				EQU $3B
-0115   0000             _W				EQU $3C
-0116   0000             _X				EQU $3D
-0117   0000             _Y				EQU $3E
-0118   0000             _Z				EQU $3F
-0119   0000             
-0120   0000             
-0121   0000             ;;;; this is the whole ZX81 runtime system and gets assembled and 
-0122   0000             ;;;; loads as it would if we just powered/booted into basic
-0123   0000             
-0124   4009                        ORG  $4009             ; assemble to this address
-0125   4009                                                                             
-0126   4009 00          VERSN:          DEFB 0
-0127   400A 02 00       E_PPC:          DEFW 2
-0128   400C 6A 44       D_FILE:         DEFW Display
-0129   400E 6B 44       DF_CC:          DEFW Display+1                  ; First character of display
-0130   4010 83 47       VARS:           DEFW Variables
-0131   4012 00 00       DEST:           DEFW 0
-0132   4014 FA 4A       E_LINE:         DEFW BasicEnd 
-0133   4016 FE 4A       CH_ADD:         DEFW BasicEnd+4                 ; Simulate SAVE "X"
-0134   4018 00 00       X_PTR:          DEFW 0
-0135   401A FF 4A       STKBOT:         DEFW BasicEnd+5
-0136   401C FF 4A       STKEND:         DEFW BasicEnd+5                 ; Empty stack
-0137   401E 00          BREG:           DEFB 0
-0138   401F 3C 40       MEM:            DEFW MEMBOT
-0139   4021 00          UNUSED1:        DEFB 0
-0140   4022 02          DF_SZ:          DEFB 2
-0141   4023 02 00       S_TOP:          DEFW $0002                      ; Top program line number
-0142   4025 BF FD       LAST_K:         DEFW $fdbf
-0143   4027 0F          DEBOUN:         DEFB 15
-0144   4028 37          MARGIN:         DEFB 55
-0145   4029 58 44       NXTLIN:         DEFW Line2                      ; Next line address
-0146   402B 00 00       OLDPPC:         DEFW 0
-0147   402D 00          FLAGX:          DEFB 0
-0148   402E 00 00       STRLEN:         DEFW 0
-0149   4030 8D 0C       T_ADDR:         DEFW $0c8d
-0150   4032 00 00       SEED:           DEFW 0
-0151   4034 A3 F5       FRAMES:         DEFW $f5a3
-0152   4036 00 00       COORDS:         DEFW 0
-0153   4038 BC          PR_CC:          DEFB $bc
-0154   4039 21 18       S_POSN:         DEFW $1821
-0155   403B 40          CDFLAG:         DEFB $40
-0156   403C 00 00       MEMBOT:         DEFB 0,0 ;  zeros
-0157   403E 00 00       UNUNSED2:       DEFW 0
-0158   4040             
-0159   407D                         ORG 16509       ;; we have to push the place in memory for this here becuase basic has 
-0160   407D                                 ;; to start at 16514 if memory was tight we could use the space between UNUSED2
-0161   407D                                 ;; and Line1 for variables
-0162   407D             
-0163   407D 00 0A       Line1:          DEFB $00,$0a                    ; Line 10
-0164   407F D7 03                       DEFW Line1End-Line1Text         ; Line 10 length
-0165   4081 EA          Line1Text:      DEFB $ea                        ; REM
-0166   4082             
-0167   4082             
+0083   0000             _BL             EQU $80; solid block
+0084   0000             
+0085   0000             _0				EQU $1C
+0086   0000             _1				EQU $1D
+0087   0000             _2				EQU $1E
+0088   0000             _3				EQU $1F
+0089   0000             _4				EQU $20
+0090   0000             _5				EQU $21
+0091   0000             _6				EQU $22
+0092   0000             _7				EQU $23
+0093   0000             _8				EQU $24
+0094   0000             _9				EQU $25
+0095   0000             _A				EQU $26
+0096   0000             _B				EQU $27
+0097   0000             _C				EQU $28
+0098   0000             _D				EQU $29
+0099   0000             _E				EQU $2A
+0100   0000             _F				EQU $2B
+0101   0000             _G				EQU $2C
+0102   0000             _H				EQU $2D
+0103   0000             _I				EQU $2E
+0104   0000             _J				EQU $2F
+0105   0000             _K				EQU $30
+0106   0000             _L				EQU $31
+0107   0000             _M				EQU $32
+0108   0000             _N				EQU $33
+0109   0000             _O				EQU $34
+0110   0000             _P				EQU $35
+0111   0000             _Q				EQU $36
+0112   0000             _R				EQU $37
+0113   0000             _S				EQU $38
+0114   0000             _T				EQU $39
+0115   0000             _U				EQU $3A
+0116   0000             _V				EQU $3B
+0117   0000             _W				EQU $3C
+0118   0000             _X				EQU $3D
+0119   0000             _Y				EQU $3E
+0120   0000             _Z				EQU $3F
+0121   0000             
+0122   0000             
+0123   0000             ;;;; this is the whole ZX81 runtime system and gets assembled and 
+0124   0000             ;;;; loads as it would if we just powered/booted into basic
+0125   0000             
+0126   4009                        ORG  $4009             ; assemble to this address
+0127   4009                                                                             
+0128   4009 00          VERSN:          DEFB 0
+0129   400A 02 00       E_PPC:          DEFW 2
+0130   400C 15 48       D_FILE:         DEFW Display
+0131   400E 16 48       DF_CC:          DEFW Display+1                  ; First character of display
+0132   4010 2E 4B       VARS:           DEFW Variables
+0133   4012 00 00       DEST:           DEFW 0
+0134   4014 CA 4F       E_LINE:         DEFW BasicEnd 
+0135   4016 CE 4F       CH_ADD:         DEFW BasicEnd+4                 ; Simulate SAVE "X"
+0136   4018 00 00       X_PTR:          DEFW 0
+0137   401A CF 4F       STKBOT:         DEFW BasicEnd+5
+0138   401C CF 4F       STKEND:         DEFW BasicEnd+5                 ; Empty stack
+0139   401E 00          BREG:           DEFB 0
+0140   401F 3C 40       MEM:            DEFW MEMBOT
+0141   4021 00          UNUSED1:        DEFB 0
+0142   4022 02          DF_SZ:          DEFB 2
+0143   4023 02 00       S_TOP:          DEFW $0002                      ; Top program line number
+0144   4025 BF FD       LAST_K:         DEFW $fdbf
+0145   4027 0F          DEBOUN:         DEFB 15
+0146   4028 37          MARGIN:         DEFB 55
+0147   4029 03 48       NXTLIN:         DEFW Line2                      ; Next line address
+0148   402B 00 00       OLDPPC:         DEFW 0
+0149   402D 00          FLAGX:          DEFB 0
+0150   402E 00 00       STRLEN:         DEFW 0
+0151   4030 8D 0C       T_ADDR:         DEFW $0c8d
+0152   4032 00 00       SEED:           DEFW 0
+0153   4034 A3 F5       FRAMES:         DEFW $f5a3
+0154   4036 00 00       COORDS:         DEFW 0
+0155   4038 BC          PR_CC:          DEFB $bc
+0156   4039 21 18       S_POSN:         DEFW $1821
+0157   403B 40          CDFLAG:         DEFB $40
+0158   403C 00 00       MEMBOT:         DEFB 0,0 ;  zeros
+0159   403E 00 00       UNUNSED2:       DEFW 0
+0160   4040             
+0161   407D                         ORG 16509       ;; we have to push the place in memory for this here becuase basic has 
+0162   407D                                 ;; to start at 16514 if memory was tight we could use the space between UNUSED2
+0163   407D                                 ;; and Line1 for variables
+0164   407D             
+0165   407D 00 0A       Line1:          DEFB $00,$0a                    ; Line 10
+0166   407F 82 07                       DEFW Line1End-Line1Text         ; Line 10 length
+0167   4081 EA          Line1Text:      DEFB $ea                        ; REM
 0168   4082             
-0169   4082             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0170   4082 C3 85 40    	jp intro_title		; main entry poitn to the code ships the memory definitions
-0171   4085             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0172   4085             	
-0173   4085             intro_title
-0174   4085 CD 2A 0A    	call CLS  ; clears screen and sets the boarder
-0175   4088               
-0176   4088             preinit
-0177   4088             ;; initialise variables that are once per game load/start
-0178   4088             
-0179   4088             initVariables
-0180   4088             
-0181   4088                 ; draw top line where lives and score go
-0182   4088 11 0E 4A        ld de, TopLineText
-0183   408B 01 02 00        ld bc, 2
-0184   408E CD 02 44        call printstring
-0185   4091             
-0186   4091 AF              xor a
-0187   4092 3A BF 49        ld a, (MissileInFlightFlag)
-0188   4095 32 9D 49        ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
-0189   4098                 
-0190   4098 3A C0 49        ld a, (missileCountDown)
-0191   409B 3E 09           ld a, 9
-0192   409D 32 9C 49        ld (playerXPos), a
-0193   40A0 21 83 47        ld hl, playerSpriteData
-0194   40A3 22 ED 49        ld (playerSpritePointer), hl 
-0195   40A6 21 6B 44        ld hl, Display+1 
-0196   40A9 11 7D 02        ld de, PLAYER_START_POS
-0197   40AC 19              add hl, de 
-0198   40AD 22 BD 49        ld (currentPlayerLocation), hl
-0199   40B0 21 6B 44        ld hl, Display+1 
-0200   40B3 11 06 00        ld de, 6
-0201   40B6 19              add hl, de     
-0202   40B7 22 02 4A        ld (jollyRogerLocation), hl
-0203   40BA 21 01 00        ld hl, 1
-0204   40BD 22 FF 49        ld (jollyRogerDirUpdate),hl
-0205   40C0 3E 05           ld a, 5
-0206   40C2 32 01 4A        ld (jollyRogerXPos),a
-0207   40C5                 
-0208   40C5 21 01 00        ld hl, 1
-0209   40C8 22 F7 49        ld (pirateDirUpdate),hl
-0210   40CB 3E 05           ld a, 5
-0211   40CD 32 F9 49        ld (pirateXPos),a
-0212   40D0                 
-0213   40D0 3E 03           ld a, 3 
-0214   40D2 32 FA 49        ld (playerLives), a
-0215   40D5                 
-0216   40D5 AF              xor a
-0217   40D6 32 06 4A        ld (gameOverRestartFlag), a        
-0218   40D9 3A FB 49        ld a, (score_mem_tens)
-0219   40DC 32 FD 49        ld (last_score_mem_tens),a
-0220   40DF 3A FC 49        ld a, (score_mem_hund)
-0221   40E2 32 FE 49        ld (last_score_mem_hund),a        
-0222   40E5                 
-0223   40E5                 
-0224   40E5             
-0225   40E5 21 6B 44        ld hl, Display+1 
-0226   40E8 11 24 00        ld de, 36
-0227   40EB 19              add hl, de 
-0228   40EC 22 EF 49        ld (pirateTopLeftPosition), hl
-0229   40EF AF              xor a
-0230   40F0 32 F4 49        ld (pirateSpriteCycleCount), a
-0231   40F3                 ;ld hl, pirate3sprites
-0232   40F3 21 C3 48        ld hl, pirate3sprites4x4
-0233   40F6 22 F5 49        ld (pirateSpritesPointer), hl 
-0234   40F9 21 01 00        ld hl, 1 
-0235   40FC 22 F7 49        ld (pirateDirUpdate), hl
-0236   40FF 3E FF           ld a, $ff   ; every pirate is alive
-0237   4101                 ;ld a, $01   ; for test only bottom right pirate is alive
-0238   4101                 ;ld a, $80   ; for test only top left pirate is alive    
-0239   4101 3E 55           ld a, $55   ; for test every other pirate is alive
-0240   4103 32 9B 49        ld (pirateValidBitMap), a
-0241   4106                 
-0242   4106             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
-0243   4106             gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-0244   4106             
-0245   4106 06 02       	ld b,VSYNCLOOP
-0246   4108             waitForTVSync	
-0247   4108 CD 4C 44    	call vsync
-0248   410B 10 FB       	djnz waitForTVSync
-0249   410D             
-0250   410D 3A 9E 49        ld a, (evenOddLoopCount)
-0251   4110 3C              inc a
-0252   4111 FE 08           cp 8    
-0253   4113 28 09           jr z, resetEvenOddAndSetFlag
-0254   4115 32 9E 49        ld (evenOddLoopCount), a
-0255   4118 AF              xor a
-0256   4119 32 9D 49        ld (evenOddLoopFlag), a    ; used for multi rate enemies    
-0257   411C 18 09           jr continueWithGameLoop
-0258   411E                 
-0259   411E             resetEvenOddAndSetFlag    
-0260   411E AF              xor a
-0261   411F 32 9E 49        ld (evenOddLoopCount), a
-0262   4122 3E 01           ld a, 1
-0263   4124 32 9D 49        ld (evenOddLoopFlag), a    ; used for multi rate enemies
-0264   4127             
-0265   4127             continueWithGameLoop              
-0266   4127 CD 11 43        call drawMainInvaderGrid
-0267   412A                 
-0268   412A                 
-0269   412A ED 5B BD 49     ld de, (currentPlayerLocation)
-0270   412E 21 F3 48        ld hl, blankSprite
-0271   4131 0E 08           ld c, 8
-0272   4133 06 04           ld b, 4 
-0273   4135 CD A1 43        call drawSprite
-0274   4138                 
-0275   4138                 ; ld hl, blankSprite
-0276   4138                 ; ld de, (previousJollyRogerLocation)
-0277   4138                 ; ld c, 8
-0278   4138                 ; ld b, 8    
-0279   4138                 ; call drawSprite    
-0280   4138                 ; call updateJollyRoger    
-0281   4138                 
-0282   4138                 
-0283   4138             
-0284   4138                 
-0285   4138                     
-0286   4138 CD C8 43        call printLivesAndScore   
-0287   413B                 
-0288   413B                     
-0289   413B 3A 06 4A        ld a, (gameOverRestartFlag)
-0290   413E FE 01           cp 1
-0291   4140 CA 85 40        jp z, intro_title
-0292   4143                 
-0293   4143                 ;call blankEnemySprites
-0294   4143                 ;call drawEnemySprites        
-0295   4143                 ;call updateEnemySpritePositions
-0296   4143                    
-0297   4143                
-0298   4143             ; keyboard layout for reading keys on ZX81
-0299   4143             ; BIT   left block      right block  BIT
-0300   4143             ; off                                off in <port>, when ld a, <port>
-0301   4143             ;       0  1 2 3 4     4 3 2 1 0                 <<< bit to check for each column after in a, $fe 
-0302   4143             ; 3   ( 1  2 3 4 5 ) ( 6 7 8 9 0 )     4
-0303   4143             ; 2   ( Q  W E R T ) ( Y U I O P )     5
-0304   4143             ; 1   ( A  S D F G ) ( H I K L n/l)    6
-0305   4143             ; 0   (sft Z X C V ) ( B N M . spc)    7
-0306   4143             ;
-0307   4143             ; to read keys 1 2 3 4 5
-0308   4143             ; set all bits except bit 3 of register A = 1 1 1 1 0 1 1 1= f7, then execute in a, $fe  (fe is the "keyboard read port")
-0309   4143             ; now register a will contain a bit pattern to check for which key in that block was set, eg Key "1" = bit 0 of a
-0310   4143             ; ld a, $f7    
-0311   4143             ; in a, $fe    
-0312   4143             ; similarly for the rest, to read from block A S D F G, set a to 1 1 1 1 1 1 1 0 1 = $fd
-0313   4143             
-0314   4143                 
-0315   4143                 ;; read keys
-0316   4143 3E DF           ld a, KEYBOARD_READ_PORT_P_TO_Y			
-0317   4145 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port	
-0318   4147 CB 4F           bit 1, a                            ; O
-0319   4149 CA 6A 41        jp z, moveLeft
-0320   414C             
-0321   414C             
-0322   414C 3E DF           ld a, KEYBOARD_READ_PORT_P_TO_Y			
-0323   414E DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
-0324   4150 CB 47           bit 0, a					        ; P
-0325   4152 CA 92 41        jp z, moveRight
-0326   4155             
-0327   4155             
-0328   4155 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
-0329   4157 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
-0330   4159 CB 47           bit 0, a						    ; SPACE
-0331   415B CA BA 41        jp z, doFireMissile
-0332   415E                 
-0333   415E 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
-0334   4160 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
-0335   4162 CB 4F           bit 1, a						    ; Z
-0336   4164 CA BA 41        jp z, doFireMissile    
-0337   4167             skipFireKeyDetect_1    
-0338   4167 C3 D6 41        jp updateRestOfScreen                       ; if no key pressed continue
-0339   416A             
-0340   416A             moveLeft         
-0341   416A 3A 9C 49        ld a, (playerXPos)
-0342   416D 3D              dec a
-0343   416E FE 00           cp 0      ;;; this prevents the player moving past edge, but if it's a door
-0344   4170                           ;; trigger seperate code to move to new room
-0345   4170 CA D6 41        jp z, updateRestOfScreen   
-0346   4173 32 9C 49        ld (playerXPos), a
-0347   4176                 
-0348   4176                     
-0349   4176 2A BD 49        ld hl, (currentPlayerLocation)
-0350   4179 2B              dec hl
-0351   417A 22 BD 49        ld (currentPlayerLocation), hl  
-0352   417D             
-0353   417D                  
-0354   417D 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
-0355   417F DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
-0356   4181 CB 47           bit 0, a						    ; SPACE
-0357   4183 CA BA 41        jp z, doFireMissile
-0358   4186                 
-0359   4186 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
-0360   4188 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
-0361   418A CB 4F           bit 1, a						    ; Z
-0362   418C CA BA 41        jp z, doFireMissile        
-0363   418F C3 D6 41        jp updateRestOfScreen 
-0364   4192                 
-0365   4192             moveRight       
-0366   4192 3A 9C 49        ld a, (playerXPos)
-0367   4195 3C              inc a
-0368   4196 FE 18           cp 24          ;;; this prevents the player moving past edge, but if it's a door
-0369   4198                                ;; trigger seperate code to move to new room
-0370   4198                 
-0371   4198 CA D6 41        jp z, updateRestOfScreen   
-0372   419B 32 9C 49        ld (playerXPos), a
-0373   419E                 
-0374   419E                 
-0375   419E                 
-0376   419E 2A BD 49        ld hl, (currentPlayerLocation)    
-0377   41A1 23              inc hl
-0378   41A2 22 BD 49        ld (currentPlayerLocation), hl     
-0379   41A5               
-0380   41A5 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
-0381   41A7 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
-0382   41A9 CB 47           bit 0, a						    ; SPACE
-0383   41AB CA BA 41        jp z, doFireMissile
-0384   41AE             
-0385   41AE 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
-0386   41B0 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
-0387   41B2 CB 4F           bit 1, a						    ; Z
-0388   41B4 CA BA 41        jp z, doFireMissile         
-0389   41B7             
-0390   41B7 C3 D6 41        jp updateRestOfScreen 
-0391   41BA                 
-0392   41BA             doFireMissile      ; triggered when jump key pressed just sets the       
-0393   41BA 3A BF 49        ld a, (MissileInFlightFlag)
-0394   41BD FE 01           cp 1
-0395   41BF CA D6 41        jp z, skipLaunchMissile
-0396   41C2                 ;; we first need to work out where the missiles should fire from based on current player location
-0397   41C2                 ;; unless we're in power up mode then just fires form middle of nose of ship
-0398   41C2                 
-0399   41C2                 ;; in power up mode we'll fire from nose and wing tips :) (note: not yet implemented) 
-0400   41C2 2A BD 49        ld hl, (currentPlayerLocation)
-0401   41C5 11 E1 FF        ld de, -31  
-0402   41C8 19              add hl, de    
-0403   41C9 22 C1 49        ld (currentMissilePosition), hl
-0404   41CC                 ;;; setup the missile "Time To Live"  (like ethernet TTL right :)
-0405   41CC 3E 12           ld a, MISSILE_COUNTDOWN_INIT
-0406   41CE 32 C0 49        ld (missileCountDown), a
-0407   41D1 3E 01           ld a, 1
-0408   41D3 32 BF 49        ld (MissileInFlightFlag), a
-0409   41D6                       
-0410   41D6             
-0411   41D6             skipLaunchMissile
-0412   41D6             updateRestOfScreen 
-0413   41D6                 
-0414   41D6 2A ED 49        ld hl, (playerSpritePointer)    
-0415   41D9 ED 5B BD 49     ld de, (currentPlayerLocation)
-0416   41DD 0E 08           ld c, 8
-0417   41DF 06 04           ld b, 4    
-0418   41E1 CD A1 43        call drawSprite
-0419   41E4             
-0420   41E4             ;; the idea is to use the skull and cross bones as an end of level "boss"
-0421   41E4~            #if 0    
-0422   41E4~                ld hl, jollyRoger
-0423   41E4~                ld de, (jollyRogerLocation)
-0424   41E4~                ld c, 8
-0425   41E4~                ld b, 8    
-0426   41E4~                call drawSprite    
-0427   41E4~                call updateJollyRoger    
-0428   41E4             #endif    
-0429   41E4                 
-0430   41E4 3A BF 49        ld a, (MissileInFlightFlag)
-0431   41E7 FE 00           cp 0
-0432   41E9 CA 0F 42        jp z, skipMissileDraw
-0433   41EC                 
-0434   41EC 2A C1 49        ld hl, (currentMissilePosition)
-0435   41EF 11 21 00        ld de, 33
-0436   41F2 19              add hl, de
-0437   41F3 EB              ex de, hl    
-0438   41F4 21 F3 48        ld hl, blankSprite
-0439   41F7 0E 04           ld c, 4
-0440   41F9 06 04           ld b, 4 
-0441   41FB CD A1 43        call drawSprite    
-0442   41FE                 
-0443   41FE 21 C3 47        ld hl, missileData
-0444   4201 ED 5B C1 49     ld de, (currentMissilePosition)        
-0445   4205 0E 04           ld c, 4
-0446   4207 06 04           ld b, 4    
-0447   4209 CD A1 43        call drawSprite
-0448   420C                    
-0449   420C CD 12 42        call updateMissilePosition
-0450   420F             skipMissileDraw
-0451   420F                 
-0452   420F C3 06 41        jp gameLoop
-0453   4212                 
-0454   4212             updateMissilePosition
-0455   4212 3A C0 49          ld a, (missileCountDown)
-0456   4215 3D                dec a
-0457   4216 FE 00             cp 0
-0458   4218 CA 2A 42          jp z, noMissileUpClearMissile
-0459   421B                  
-0460   421B 32 C0 49          ld (missileCountDown), a      
-0461   421E                   
-0462   421E 2A C1 49          ld hl, (currentMissilePosition)    
-0463   4221 11 DF FF          ld de, -33
-0464   4224 19                add hl, de
-0465   4225 22 C1 49          ld (currentMissilePosition), hl
-0466   4228 18 04             jr noMissileUpdate
-0467   422A             noMissileUpClearMissile
-0468   422A AF                xor a
-0469   422B 32 BF 49          ld (MissileInFlightFlag), a 
-0470   422E             noMissileUpdate      
-0471   422E C9                ret
-0472   422F                   
-0473   422F             
-0474   422F             updatePirateXPos   
-0475   422F             
-0476   422F 3A F9 49        ld a, (pirateXPos)            
-0477   4232 FE 0E           cp 14
-0478   4234 28 06           jr z, reversePirateDirToNeg
-0479   4236 FE 03           cp 3
-0480   4238 28 34           jr z, reversePirateDirToPos
-0481   423A                     
-0482   423A 18 64           jr endOfUpdatePirateXPos    
-0483   423C                 
-0484   423C             reversePirateDirToNeg
-0485   423C 21 FF FF        ld hl, -1 
-0486   423F 22 F7 49        ld (pirateDirUpdate), hl
-0487   4242                 ;; also shove down one row
-0488   4242                 ;before we do that we need to blank the line where the pirates "heads" were
-0489   4242 ED 5B EF 49     ld de, (pirateTopLeftPosition)
-0490   4246 21 F3 48        ld hl, blankSprite
-0491   4249 0E 10           ld c, 16
-0492   424B 06 01           ld b, 1 
-0493   424D CD A1 43        call drawSprite
-0494   4250 2A EF 49        ld hl, (pirateTopLeftPosition)
-0495   4253 11 A5 00        ld de, 165
-0496   4256 19              add hl, de
-0497   4257 EB              ex de, hl
-0498   4258 21 F3 48        ld hl, blankSprite
-0499   425B 0E 10           ld c, 16
-0500   425D 06 01           ld b, 1 
-0501   425F CD A1 43        call drawSprite
-0502   4262                 ;; finally move one row down
-0503   4262 2A EF 49        ld hl, (pirateTopLeftPosition)
-0504   4265 11 21 00        ld de, 33
-0505   4268 19              add hl, de
-0506   4269 22 EF 49        ld (pirateTopLeftPosition),hl   
-0507   426C                 
-0508   426C 18 32           jr endOfUpdatePirateXPos 
-0509   426E                 
-0510   426E             reversePirateDirToPos    
-0511   426E 21 01 00        ld hl, 1 
-0512   4271 22 F7 49        ld (pirateDirUpdate), hl
-0513   4274                 ;; also shove down one row
-0514   4274                 ;before we do that we need to blank the line where the pirates "heads" were
-0515   4274 ED 5B EF 49     ld de, (pirateTopLeftPosition)
-0516   4278 21 F3 48        ld hl, blankSprite
-0517   427B 0E 10           ld c, 16
-0518   427D 06 01           ld b, 1 
-0519   427F CD A1 43        call drawSprite
-0520   4282                 ;; and blank the middle bit between the rows of pirates
-0521   4282 2A EF 49        ld hl, (pirateTopLeftPosition)
-0522   4285 11 A5 00        ld de, 165
-0523   4288 19              add hl, de
-0524   4289 EB              ex de, hl
-0525   428A 21 F3 48        ld hl, blankSprite
-0526   428D 0E 10           ld c, 16
-0527   428F 06 01           ld b, 1 
-0528   4291 CD A1 43        call drawSprite
-0529   4294                 
-0530   4294                 ;; finally move one row down
-0531   4294 2A EF 49        ld hl, (pirateTopLeftPosition)
-0532   4297 11 21 00        ld de, 33
-0533   429A 19              add hl, de
-0534   429B 22 EF 49        ld (pirateTopLeftPosition),hl    
-0535   429E 18 00           jr endOfUpdatePirateXPos 
-0536   42A0                 
-0537   42A0             endOfUpdatePirateXPos
-0538   42A0~            #ifdef DEBUG_PIRATE_DIR
-0539   42A0~                ld a,(pirateXPos)  
-0540   42A0~                ld de, 1
-0541   42A0~                call print_number8bits
-0542   42A0             #endif   
-0543   42A0 2A EF 49        ld hl, (pirateTopLeftPosition)
-0544   42A3                 ;ld (previousPirateLocation), hl
-0545   42A3 ED 5B F7 49     ld de, (pirateDirUpdate)
-0546   42A7 19              add hl, de
-0547   42A8 22 EF 49        ld (pirateTopLeftPosition), hl
-0548   42AB             
-0549   42AB 2A F7 49        ld hl, (pirateDirUpdate)    
-0550   42AE 3A F9 49        ld a, (pirateXPos)
-0551   42B1 85              add a, l
-0552   42B2 32 F9 49        ld (pirateXPos), a 
-0553   42B5                 
-0554   42B5 C9              ret
-0555   42B6                   
-0556   42B6             updateJollyRoger   
-0557   42B6 3A 01 4A        ld a, (jollyRogerXPos)        
-0558   42B9 FE 17           cp 23  
-0559   42BB 28 06           jr z, reverseDirToNeg
-0560   42BD FE 01           cp 1
-0561   42BF 28 0A           jr z, reverseDirToPos
-0562   42C1                     
-0563   42C1 18 10           jr endOfUpdateJollyRoger    
-0564   42C3                 
-0565   42C3             reverseDirToNeg
-0566   42C3 21 FF FF        ld hl, -1 
-0567   42C6 22 FF 49        ld (jollyRogerDirUpdate), hl
-0568   42C9 18 08           jr endOfUpdateJollyRoger 
-0569   42CB                 
-0570   42CB             reverseDirToPos    
-0571   42CB 21 01 00        ld hl, 1 
-0572   42CE 22 FF 49        ld (jollyRogerDirUpdate), hl
-0573   42D1 18 00           jr endOfUpdateJollyRoger 
-0574   42D3                 
-0575   42D3             endOfUpdateJollyRoger    
-0576   42D3                 
-0577   42D3 2A 02 4A        ld hl, (jollyRogerLocation)
-0578   42D6 22 04 4A        ld (previousJollyRogerLocation), hl
-0579   42D9 ED 5B FF 49     ld de, (jollyRogerDirUpdate)
-0580   42DD 19              add hl, de
-0581   42DE 22 02 4A        ld (jollyRogerLocation), hl
-0582   42E1             
-0583   42E1 2A FF 49        ld hl, (jollyRogerDirUpdate)    
-0584   42E4 3A 01 4A        ld a, (jollyRogerXPos)
-0585   42E7 85              add a, l
-0586   42E8 32 01 4A        ld (jollyRogerXPos), a 
-0587   42EB                 
-0588   42EB C9              ret
-0589   42EC             
-0590   42EC             blankToLAndROfInvader
-0591   42EC 2A EF 49        ld hl, (pirateTopLeftPosition)    
-0592   42EF 11 FF FF        ld de, -1
-0593   42F2 19              add hl, de
-0594   42F3 EB              ex de, hl
-0595   42F4 21 C3 49        ld hl, enemySprite5by8Blank
-0596   42F7 0E 01           ld c, 1
-0597   42F9 06 09           ld b, 9 
-0598   42FB CD A1 43        call drawSprite              
-0599   42FE 2A EF 49        ld hl, (pirateTopLeftPosition)    
-0600   4301 11 10 00        ld de, 16
-0601   4304 19              add hl, de
-0602   4305 EB              ex de, hl
-0603   4306 21 C3 49        ld hl, enemySprite5by8Blank
-0604   4309 0E 01           ld c, 1
-0605   430B 06 09           ld b, 9 
-0606   430D CD A1 43        call drawSprite                  
-0607   4310 C9             ret
-0608   4311                
-0609   4311             drawMainInvaderGrid
-0610   4311             ;; we have an area of memory which will represent flags for if each of the grid of 5 rows of
-0611   4311             ;; 5 columnsn invaders is valid (ie not been killed). This code will loop round that and 
-0612   4311             ;; display an invader sprite if required       
-0613   4311 CD EC 42        call blankToLAndROfInvader
-0614   4314 06 02           ld b, 2
-0615   4316 2A EF 49        ld hl, (pirateTopLeftPosition)
-0616   4319 22 F1 49        ld (pirateRowLeftPositionTemp), hl
-0617   431C 3E 80           ld a, $80    ; setup a moving bit mask which we'll use to determine if the pirate is shot or not
-0618   431E 32 F3 49        ld (pirateValidBitMapMaskTemp), a
-0619   4321                 
-0620   4321                 
-0621   4321             pirateRowDrawLoop    
-0622   4321             
-0623   4321 C5             push bc
-0624   4322                     
-0625   4322 06 04               ld b, 4       
-0626   4324             pirateColDrawLoop 
-0627   4324 C5                      push bc 
-0628   4325                             ;; put some logic here to determine if the pirate was shot or not
-0629   4325                             
-0630   4325 3A F3 49                    ld a, (pirateValidBitMapMaskTemp)
-0631   4328 47                          ld b, a
-0632   4329 3A 9B 49                    ld a, (pirateValidBitMap)
-0633   432C A0                          and b                
-0634   432D F5                          push af
-0635   432E CB 18                       rr b
-0636   4330 78                          ld a, b
-0637   4331 32 F3 49                    ld (pirateValidBitMapMaskTemp),a
-0638   4334 F1                          pop af
-0639   4335 28 10                       jr z, skipDrawThisPirate    
-0640   4337                             
-0641   4337                             
-0642   4337 ED 5B F1 49                 ld de, (pirateRowLeftPositionTemp)
-0643   433B 2A F5 49                    ld hl, (pirateSpritesPointer)
-0644   433E 0E 04                       ld c, 4
-0645   4340                             ;ld b, 8 
-0646   4340 06 04                       ld b, 4 
-0647   4342 CD A1 43                    call drawSprite          
-0648   4345 18 0E                       jr continueWithPirateLoop
-0649   4347             skipDrawThisPirate
-0650   4347                             ;; but draw a blank
-0651   4347 ED 5B F1 49                 ld de, (pirateRowLeftPositionTemp)
-0652   434B 21 F3 48                    ld hl, blankSprite
-0653   434E 0E 04                       ld c, 4
-0654   4350                             ;ld b, 8 
-0655   4350 06 04                       ld b, 4 
-0656   4352 CD A1 43                    call drawSprite                          
-0657   4355             continueWithPirateLoop                
-0658   4355 21 04 00                    ld hl, 4
-0659   4358 ED 5B F1 49                 ld de, (pirateRowLeftPositionTemp)
-0660   435C 19                          add hl, de   
-0661   435D 22 F1 49                    ld (pirateRowLeftPositionTemp), hl
-0662   4360 C1                      pop bc
-0663   4361 10 C1                   djnz pirateColDrawLoop        
-0664   4363                         
-0665   4363 2A EF 49                ld hl, (pirateTopLeftPosition)    
-0666   4366 11 A5 00                ld de, 165
-0667   4369 19                      add hl, de
-0668   436A 22 F1 49                ld (pirateRowLeftPositionTemp), hl
-0669   436D             
-0670   436D C1             pop bc    
-0671   436E 10 B1          djnz pirateRowDrawLoop
-0672   4370                  
-0673   4370 3A 9D 49       ld a, (evenOddLoopFlag)
-0674   4373 FE 01          cp 1
-0675   4375 28 02          jr z, updatePirateSpriteCycle
-0676   4377 18 27          jr endOfPirateSpriteUpdate
-0677   4379                ; update the sprite to draw from the 3 cycles 
-0678   4379             updatePirateSpriteCycle   
-0679   4379                ; update X position and reverse direction if reached end limits
-0680   4379 CD 2F 42       call updatePirateXPos
-0681   437C                
-0682   437C 3A F4 49       ld a, (pirateSpriteCycleCount)
-0683   437F 3C             inc a
-0684   4380 FE 02          cp 2
-0685   4382 28 12          jr z, resetPirateSprite
-0686   4384 32 F4 49       ld (pirateSpriteCycleCount), a
-0687   4387 2A F5 49       ld hl, (pirateSpritesPointer)
-0688   438A 11 20 00       ld de, 32
-0689   438D 19             add hl, de
-0690   438E 22 F5 49       ld (pirateSpritesPointer), hl
-0691   4391 3A F4 49       ld a, (pirateSpriteCycleCount)     ;; currentPlayerLocation is already offset to
-0692   4394~            #ifdef DEBUG_PRINT_PIRATE_CYCLE   
-0693   4394~               ld de, 1
-0694   4394~               call print_number8bits
-0695   4394             #endif   
-0696   4394 18 0A          jr endOfPirateSpriteUpdate
-0697   4396                
-0698   4396             resetPirateSprite   
-0699   4396 AF             xor a
-0700   4397 32 F4 49       ld (pirateSpriteCycleCount), a
-0701   439A                ;ld hl, pirate3sprites
-0702   439A 21 C3 48       ld hl, pirate3sprites4x4
-0703   439D 22 F5 49       ld (pirateSpritesPointer), hl 
-0704   43A0             
-0705   43A0             endOfPirateSpriteUpdate 
-0706   43A0 C9             ret   
-0707   43A1                 
-0708   43A1             
-0709   43A1             ;;;; sprite code
-0710   43A1             ;;;; our sprites are custom 8 by 8 charactor blocks - so will look fairly big (maybe too big)
-0711   43A1             ;;;; the generic routines will look at an area of memory stored in hl before the call
-0712   43A1             
-0713   43A1             ;;;; on the zx81 each block is 2 "pixels" horizontally and 2 vertically pre encoded in the sprite memory
-0714   43A1             ;;;; size of sprite in memory using bit pack is 16 * 16 = 256bits ==>>> 32bytes
-0715   43A1             
-0716   43A1             
-0717   43A1             ;;; hl = start of sprite memory
-0718   43A1             ;;; de = offset position in screen memory top left of sprite - no limit check done (yet)
-0719   43A1             ;;; c  = width of sprite (normally 8 to keep things "simple")
-0720   43A1             ;;; b  = rows in sprite (normally 8 to keep things "simple")
-0721   43A1             drawSprite         
-0722   43A1 C5              push bc    
-0723   43A2 D5              push de
-0724   43A3 06 00           ld b, 0               ;; just doing columns in c so zero b
-0725   43A5 ED B0           ldir                  ;; ldir repeats ld (de), (hl) until bc = 0 and increments hl and de
-0726   43A7 D1              pop de
-0727   43A8 EB              ex de, hl    
-0728   43A9 01 21 00        ld bc, 33             ;; move next write position to next row
-0729   43AC 09              add hl, bc
-0730   43AD EB              ex de, hl
-0731   43AE C1              pop bc
-0732   43AF 10 F0           djnz drawSprite    
-0733   43B1 C9              ret
-0734   43B2             
-0735   43B2             
-0736   43B2             ;;; work in progrerss currently crashes - 
-0737   43B2             ;; if this could be made to work then the platforms would appear in blank bits of sprite
-0738   43B2             ;; which would made game play better
-0739   43B2             drawSprite_OR_BACKGROUND         
-0740   43B2 C5              push bc    
-0741   43B3 D5              push de
-0742   43B4                 
-0743   43B4 41              ld b, c    ; get column loop counter in b 
-0744   43B5             drawSprite_OR_ColLoop
-0745   43B5 7E              ld a, (hl)
-0746   43B6 23              inc hl
-0747   43B7 B2              or d
-0748   43B8 B3              or e
-0749   43B9 12              ld (de), a
-0750   43BA 13              inc de
-0751   43BB 10 F8           djnz drawSprite_OR_ColLoop
-0752   43BD             
-0753   43BD D1              pop de
-0754   43BE EB              ex de, hl    
-0755   43BF 01 21 00        ld bc, 33             ;; move next write position to next row
-0756   43C2 09              add hl, bc
-0757   43C3 EB              ex de, hl
-0758   43C4 C1              pop bc
-0759   43C5 10 EB           djnz drawSprite_OR_BACKGROUND    
-0760   43C7 C9              ret  
-0761   43C8                 
-0762   43C8             printLivesAndScore
-0763   43C8 3A FA 49        ld a, (playerLives)
-0764   43CB 11 1D 00        ld de, 29    
-0765   43CE CD 1F 44        call print_number8bits        
-0766   43D1                 
-0767   43D1 01 0C 00        ld bc, 12
-0768   43D4 11 FB 49        ld de, score_mem_tens
-0769   43D7 CD 35 44        call printNumber
-0770   43DA 01 0A 00        ld bc, 10
-0771   43DD 11 FC 49        ld de, score_mem_hund
-0772   43E0 CD 35 44        call printNumber     
-0773   43E3 C9              ret
-0774   43E4             
-0775   43E4             increaseScore    
-0776   43E4 3A FB 49        ld a,(score_mem_tens)				; add one to score, scoring is binary coded decimal (BCD)
-0777   43E7 C6 01       	add a,1	
-0778   43E9 27          	daa									; z80 daa instruction realigns for BCD after add or subtract
-0779   43EA 32 FB 49    	ld (score_mem_tens),a	
-0780   43ED FE 99       	cp 153
-0781   43EF 28 02       	jr z, addOneToHund
-0782   43F1 18 0E       	jr skipAddHund
-0783   43F3             addOneToHund
-0784   43F3 3E 00       	ld a, 0
-0785   43F5 32 FB 49    	ld (score_mem_tens), a
-0786   43F8 3A FC 49        ld a, (score_mem_hund)
-0787   43FB C6 01       	add a, 1
-0788   43FD 27          	daa                                   ; z80 daa instruction realigns for BCD after add or subtract
-0789   43FE 32 FC 49    	ld (score_mem_hund), a
-0790   4401             skipAddHund	
-0791   4401             
-0792   4401 C9              ret    
-0793   4402                 
-0794   4402                 
-0795   4402             
-0796   4402                   
-0797   4402             ; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
-0798   4402             printstring
-0799   4402 D5              push de ; preserve de
-0800   4403 21 6A 44        ld hl,Display
-0801   4406 09              add hl,bc	
-0802   4407             printstring_loop
-0803   4407 1A              ld a,(de)
-0804   4408 FE FF           cp $ff
-0805   440A CA 12 44        jp z,printstring_end
-0806   440D 77              ld (hl),a
-0807   440E 23              inc hl
-0808   440F 13              inc de
-0809   4410 18 F5           jr printstring_loop
-0810   4412             printstring_end	
-0811   4412 D1              pop de  ; preserve de
-0812   4413 C9              ret  
-0813   4414                 
-0814   4414             print_number16bits    ; bc stores the 16bits, print b then c, de stores offset from Display
-0815   4414 78              ld a, b
-0816   4415 CD 1F 44        call print_number8bits
-0817   4418 79              ld a, c
-0818   4419 13              inc de  ; move de over by 2
-0819   441A 13              inc de
-0820   441B CD 1F 44        call print_number8bits
-0821   441E C9              ret
-0822   441F             
-0823   441F                 
-0824   441F             print_number8bits
-0825   441F 2A 0E 40        ld hl, (DF_CC)    
-0826   4422 19              add hl, de    
-0827   4423 F5              push af ;store the original value of a for later
-0828   4424 E6 F0           and $f0 ; isolate the first digit
-0829   4426 1F              rra
-0830   4427 1F              rra
-0831   4428 1F              rra
-0832   4429 1F              rra
-0833   442A C6 1C           add a,$1c ; add 28 to the character code
-0834   442C 77              ld (hl), a
-0835   442D 23              inc hl
-0836   442E F1              pop af ; retrieve original value of a
-0837   442F E6 0F           and $0f ; isolate the second digit
-0838   4431 C6 1C           add a,$1c ; add 28 to the character code
-0839   4433 77              ld (hl), a  
-0840   4434                 
-0841   4434 C9              ret
-0842   4435             
-0843   4435             printNumber
-0844   4435 21 6A 44        ld hl,Display
-0845   4438 09              add hl,bc	
-0846   4439             printNumber_loop
-0847   4439 1A              ld a,(de)
-0848   443A F5              push af ;store the original value of a for later
-0849   443B E6 F0           and $f0 ; isolate the first digit
-0850   443D 1F              rra
-0851   443E 1F              rra
-0852   443F 1F              rra
-0853   4440 1F              rra
-0854   4441 C6 1C           add a,$1c ; add 28 to the character code
-0855   4443 77              ld (hl), a
-0856   4444 23              inc hl
-0857   4445 F1              pop af ; retrieve original value of a
-0858   4446 E6 0F           and $0f ; isolate the second digit
-0859   4448 C6 1C           add a,$1c ; add 28 to the character code
-0860   444A 77              ld (hl), a      
-0861   444B C9              ret  
-0862   444C                 
-0863   444C             
-0864   444C             ;check if TV synchro (FRAMES) happend
-0865   444C             vsync	
-0866   444C 3A 34 40    	ld a,(FRAMES)
-0867   444F 4F          	ld c,a
-0868   4450             sync
-0869   4450 3A 34 40    	ld a,(FRAMES)
-0870   4453 B9          	cp c
-0871   4454 28 FA       	jr z,sync   
-0872   4456             endOfVsync        
-0873   4456 C9          	ret
-0874   4457             
-0875   4457                 
-0876   4457 76                          DEFB $76                        ; Newline        
-0877   4458             Line1End
-0878   4458 00 14       Line2			DEFB $00,$14
-0879   445A 0E 00                       DEFW Line2End-Line2Text
-0880   445C F9 D4       Line2Text     	DEFB $F9,$D4                    ; RAND USR
-0881   445E 1D 22 21 1D 				DEFB $1D,$22,$21,$1D,$20        ; 16514                
-0881   4462 20 
-0882   4463 7E                          DEFB $7E                        ; Number
-0883   4464 8F 01 04 00                 DEFB $8F,$01,$04,$00,$00        ; Numeric encoding
-0883   4468 00 
-0884   4469 76                          DEFB $76                        ; Newline
-0885   446A             Line2End            
-0886   446A             endBasic
-0887   446A                                                                             
-0888   446A 76          Display        	DEFB $76                                                 				
-0889   446B 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76                     
-0889   446F 00 00 00 00 
-0889   4473 00 00 00 00 
-0889   4477 00 00 00 00 
-0889   447B 00 00 00 00 
-0889   447F 00 00 00 00 
-0889   4483 00 00 00 00 
-0889   4487 00 00 00 00 
-0889   448B 76 
-0890   448C 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0890   4490 00 00 00 00 
-0890   4494 00 00 00 00 
-0890   4498 00 00 00 00 
-0890   449C 00 00 00 00 
-0890   44A0 00 00 00 00 
-0890   44A4 00 00 00 00 
-0890   44A8 00 00 00 00 
-0890   44AC 76 
-0891   44AD 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0891   44B1 00 00 00 00 
-0891   44B5 00 00 00 00 
-0891   44B9 00 00 00 00 
-0891   44BD 00 00 00 00 
-0891   44C1 00 00 00 00 
-0891   44C5 00 00 00 00 
-0891   44C9 00 00 00 00 
-0891   44CD 76 
-0892   44CE 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0892   44D2 00 00 00 00 
-0892   44D6 00 00 00 00 
-0892   44DA 00 00 00 00 
-0892   44DE 00 00 00 00 
-0892   44E2 00 00 00 00 
-0892   44E6 00 00 00 00 
-0892   44EA 00 00 00 00 
-0892   44EE 76 
-0893   44EF 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0893   44F3 00 00 00 00 
-0893   44F7 00 00 00 00 
-0893   44FB 00 00 00 00 
-0893   44FF 00 00 00 00 
-0893   4503 00 00 00 00 
-0893   4507 00 00 00 00 
-0893   450B 00 00 00 00 
-0893   450F 76 
-0894   4510 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0894   4514 00 00 00 00 
-0894   4518 00 00 00 00 
-0894   451C 00 00 00 00 
-0894   4520 00 00 00 00 
-0894   4524 00 00 00 00 
-0894   4528 00 00 00 00 
-0894   452C 00 00 00 00 
-0894   4530 76 
-0895   4531 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0895   4535 00 00 00 00 
-0895   4539 00 00 00 00 
-0895   453D 00 00 00 00 
-0895   4541 00 00 00 00 
-0895   4545 00 00 00 00 
-0895   4549 00 00 00 00 
-0895   454D 00 00 00 00 
-0895   4551 76 
-0896   4552 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0896   4556 00 00 00 00 
-0896   455A 00 00 00 00 
-0896   455E 00 00 00 00 
-0896   4562 00 00 00 00 
-0896   4566 00 00 00 00 
-0896   456A 00 00 00 00 
-0896   456E 00 00 00 00 
-0896   4572 76 
-0897   4573 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0897   4577 00 00 00 00 
-0897   457B 00 00 00 00 
-0897   457F 00 00 00 00 
-0897   4583 00 00 00 00 
-0897   4587 00 00 00 00 
-0897   458B 00 00 00 00 
-0897   458F 00 00 00 00 
-0897   4593 76 
-0898   4594 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0898   4598 00 00 00 00 
-0898   459C 00 00 00 00 
-0898   45A0 00 00 00 00 
-0898   45A4 00 00 00 00 
-0898   45A8 00 00 00 00 
-0898   45AC 00 00 00 00 
-0898   45B0 00 00 00 00 
-0898   45B4 76 
-0899   45B5 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0899   45B9 00 00 00 00 
-0899   45BD 00 00 00 00 
-0899   45C1 00 00 00 00 
-0899   45C5 00 00 00 00 
-0899   45C9 00 00 00 00 
-0899   45CD 00 00 00 00 
-0899   45D1 00 00 00 00 
-0899   45D5 76 
-0900   45D6 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0900   45DA 00 00 00 00 
-0900   45DE 00 00 00 00 
-0900   45E2 00 00 00 00 
-0900   45E6 00 00 00 00 
-0900   45EA 00 00 00 00 
-0900   45EE 00 00 00 00 
-0900   45F2 00 00 00 00 
-0900   45F6 76 
-0901   45F7 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0901   45FB 00 00 00 00 
-0901   45FF 00 00 00 00 
-0901   4603 00 00 00 00 
-0901   4607 00 00 00 00 
-0901   460B 00 00 00 00 
-0901   460F 00 00 00 00 
-0901   4613 00 00 00 00 
-0901   4617 76 
-0902   4618 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0902   461C 00 00 00 00 
-0902   4620 00 00 00 00 
-0902   4624 00 00 00 00 
-0902   4628 00 00 00 00 
-0902   462C 00 00 00 00 
-0902   4630 00 00 00 00 
-0902   4634 00 00 00 00 
-0902   4638 76 
-0903   4639 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0903   463D 00 00 00 00 
-0903   4641 00 00 00 00 
-0903   4645 00 00 00 00 
-0903   4649 00 00 00 00 
-0903   464D 00 00 00 00 
-0903   4651 00 00 00 00 
-0903   4655 00 00 00 00 
-0903   4659 76 
-0904   465A 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0904   465E 00 00 00 00 
-0904   4662 00 00 00 00 
-0904   4666 00 00 00 00 
-0904   466A 00 00 00 00 
-0904   466E 00 00 00 00 
-0904   4672 00 00 00 00 
-0904   4676 00 00 00 00 
-0904   467A 76 
-0905   467B 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0905   467F 00 00 00 00 
-0905   4683 00 00 00 00 
-0905   4687 00 00 00 00 
-0905   468B 00 00 00 00 
-0905   468F 00 00 00 00 
-0905   4693 00 00 00 00 
-0905   4697 00 00 00 00 
-0905   469B 76 
-0906   469C 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0906   46A0 00 00 00 00 
-0906   46A4 00 00 00 00 
-0906   46A8 00 00 00 00 
-0906   46AC 00 00 00 00 
-0906   46B0 00 00 00 00 
-0906   46B4 00 00 00 00 
-0906   46B8 00 00 00 00 
-0906   46BC 76 
-0907   46BD 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0907   46C1 00 00 00 00 
-0907   46C5 00 00 00 00 
-0907   46C9 00 00 00 00 
-0907   46CD 00 00 00 00 
-0907   46D1 00 00 00 00 
-0907   46D5 00 00 00 00 
-0907   46D9 00 00 00 00 
-0907   46DD 76 
-0908   46DE 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0908   46E2 00 00 00 00 
-0908   46E6 00 00 00 00 
-0908   46EA 00 00 00 00 
-0908   46EE 00 00 00 00 
-0908   46F2 00 00 00 00 
-0908   46F6 00 00 00 00 
-0908   46FA 00 00 00 00 
-0908   46FE 76 
-0909   46FF 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0909   4703 00 00 00 00 
-0909   4707 00 00 00 00 
-0909   470B 00 00 00 00 
-0909   470F 00 00 00 00 
-0909   4713 00 00 00 00 
-0909   4717 00 00 00 00 
-0909   471B 00 00 00 00 
-0909   471F 76 
-0910   4720 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0910   4724 00 00 00 00 
-0910   4728 00 00 00 00 
-0910   472C 00 00 00 00 
-0910   4730 00 00 00 00 
-0910   4734 00 00 00 00 
-0910   4738 00 00 00 00 
-0910   473C 00 00 00 00 
-0910   4740 76 
-0911   4741 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0911   4745 00 00 00 00 
-0911   4749 00 00 00 00 
-0911   474D 00 00 00 00 
-0911   4751 00 00 00 00 
-0911   4755 00 00 00 00 
-0911   4759 00 00 00 00 
-0911   475D 00 00 00 00 
-0911   4761 76 
-0912   4762 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
-0912   4766 00 00 00 00 
-0912   476A 00 00 00 00 
-0912   476E 00 00 00 00 
-0912   4772 00 00 00 00 
-0912   4776 00 00 00 00 
-0912   477A 00 00 00 00 
-0912   477E 00 00 00 00 
-0912   4782 76 
-0913   4783             
-0914   4783             Variables: 
-0915   4783             
-0916   4783             playerSpriteData
-0917   4783                  ; DEFB   $00, $00, $00, $85, $05, $00, $00, $00, $00, $00, $00, $81, commented out but nice space fighhter ship
-0918   4783                  ; DEFB	$82, $00, $00, $00, $00, $00, $00, $05, $85, $00, $00, $00,
-0919   4783                  ; DEFB	$00, $00, $85, $80, $80, $05, $00, $00, $05, $87, $80, $80,
-0920   4783                  ; DEFB	$80, $80, $04, $85, $82, $80, $80, $82, $81, $80, $80, $81,
-0921   4783                  ; DEFB	$07, $03, $84, $82, $81, $07, $03, $84, $00, $00, $00, $84,
-0922   4783                  ; DEFB	$07, $00, $00, $00     
-0923   4783                 ; the next one is the old 8x8 big sail ship
-0924   4783                 ; DEFB	$00, $00, $00, $00, $81, $04, $00, $00, $00, $00, $00, $06,
-0925   4783                 ; DEFB	$85, $00, $00, $00, $00, $00, $06, $87, $80, $82, $00, $00,
-0926   4783                 ; DEFB	$00, $06, $87, $80, $80, $80, $82, $00, $06, $00, $03, $03,
-0927   4783                 ; DEFB	$84, $00, $87, $83, $03, $82, $07, $03, $03, $03, $84, $80,
-0928   4783                 ; DEFB	$00, $02, $04, $01, $01, $01, $86, $01, $00, $00, $02, $80,
-0929   4783                 ; DEFB	$80, $80, $01, $00   
-0930   4783                 ; this is now 8 by 4
-0931   4783 00 00 81 00      DEFB $00, $00, $81, $00, $00, $81, $04, $00, $00, $06, $85, $00,
-0931   4787 00 81 04 00 
-0931   478B 00 06 85 00 
-0932   478F 00 85 00 00      DEFB $00, $85, $00, $00, $81, $83, $81, $83, $82, $81, $81, $80,
-0932   4793 81 83 81 83 
-0932   4797 82 81 81 80 
-0933   479B 00 02 81 81      DEFB $00, $02, $81, $81, $81, $81, $82, $01, $00, $00, $00, $00,
-0933   479F 81 81 82 01 
-0933   47A3 00 00 00 00 
-0934   47A7 00 00 00 00      DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-0934   47AB 00 00 00 00 
-0934   47AF 00 00 00 00 
-0935   47B3 00 00 00 00      DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-0935   47B7 00 00 00 00 
-0935   47BB 00 00 00 00 
-0936   47BF 00 00 00 00 	 DEFB $00, $00, $00, $00
-0937   47C3                 
-0938   47C3             missileData     
-0939   47C3                  ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-0940   47C3                  ;DEFB	$00, $00, $00, $00, $00, $00, $00, $87, $04, $00, $00, $00,
-0941   47C3                  ;DEFB	$00, $00, $00, $02, $01, $00, $00, $00, $00, $00, $00, $00,
-0942   47C3                  ;DEFB	$00, $00, $00, $00, $00, $00, $00, $85, $05, $00, $00, $00,
-0943   47C3                  ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-0944   47C3                  ;DEFB	$00, $00, $00, $00     
-0945   47C3 00 87 04 00 	DEFB $00, $87, $04, $00, $00, $02, $01, $00, $00, $00, $00, $00,
-0945   47C7 00 02 01 00 
-0945   47CB 00 00 00 00 
-0946   47CF 00 85 05 00 	DEFB $00, $85, $05, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-0946   47D3 00 00 00 00 
-0946   47D7 00 00 00 00 
-0947   47DB 00 00 00 00 	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-0947   47DF 00 00 00 00 
-0947   47E3 00 00 00 00 
-0948   47E7 00 00 00 00 	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
-0948   47EB 00 00 00 00 
-0948   47EF 00 00 00 00 
-0949   47F3                  
-0950   47F3             explsion4x4     
-0951   47F3 00 86 00 06 	DEFB $00, $86, $00, $06, $04, $87, $04, $00, $00, $02, $86, $00,
-0951   47F7 04 87 04 00 
-0951   47FB 00 02 86 00 
-0952   47FF 87 01 00 01 	DEFB $87, $01, $00, $01, $00, $00, $00, $00, $00, $00, $00, $00,
-0952   4803 00 00 00 00 
-0952   4807 00 00 00 00 
-0953   480B 00 00 00 00 	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
-0953   480F 00 00 00 00 
-0953   4813 00 00 00 00 
-0954   4817 00 00 00 00 	DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
-0954   481B 00 00 00 00 
-0954   481F 00 00 00 00 
-0955   4823             jollyRoger     
-0956   4823 87 03 00 00      DEFB	$87, $03, $00, $00, $00, $00, $03, $04, $05, $86, $00, $83,
-0956   4827 00 00 03 04 
-0956   482B 05 86 00 83 
-0957   482F 83 00 06 85      DEFB	$83, $00, $06, $85, $00, $00, $06, $04, $87, $86, $00, $00,
-0957   4833 00 00 06 04 
-0957   4837 87 86 00 00 
-0958   483B 00 00 05 87      DEFB	$00, $00, $05, $87, $04, $85, $00, $00, $00, $00, $02, $83,
-0958   483F 04 85 00 00 
-0958   4843 00 00 02 83 
-0959   4847 83 01 00 00      DEFB	$83, $01, $00, $00, $00, $00, $04, $07, $84, $87, $00, $00,
-0959   484B 00 00 04 07 
-0959   484F 84 87 00 00 
-0960   4853 05 06 00 01      DEFB	$05, $06, $00, $01, $02, $00, $86, $85, $02, $83, $00, $00,
-0960   4857 02 00 86 85 
-0960   485B 02 83 00 00 
-0961   485F 00 00 83 01      DEFB	$00, $00, $83, $01     
-0962   4863             
-0963   4863             pirate3sprites     ;; these are 4 by 8 bytes and is 3 in the animation = 96bytes
-0964   4863 00 84 07 85     DEFB $00, $84, $07, $85, $87, $81, $82, $06, $05, $80, $80, $00,
-0964   4867 87 81 82 06 
-0964   486B 05 80 80 00 
-0965   486F 01 07 84 00     DEFB $01, $07, $84, $00, $87, $05, $85, $00, $00, $00, $02, $00,
-0965   4873 87 05 85 00 
-0965   4877 00 00 02 00 
-0966   487B 00 00 00 00     DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $84, $07, $00,
-0966   487F 00 00 00 00 
-0966   4883 00 84 07 00 
-0967   4887 87 81 82 04     DEFB $87, $81, $82, $04, $05, $80, $80, $85, $01, $07, $84, $02,
-0967   488B 05 80 80 85 
-0967   488F 01 07 84 02 
-0968   4893 00 05 85 00     DEFB $00, $05, $85, $00, $02, $01, $02, $00, $00, $00, $00, $00,
-0968   4897 02 01 02 00 
-0968   489B 00 00 00 00 
-0969   489F 00 00 00 00     DEFB $00, $00, $00, $00, $05, $84, $07, $00, $86, $81, $82, $04,
-0969   48A3 05 84 07 00 
-0969   48A7 86 81 82 04 
-0970   48AB 00 80 80 85 	DEFB $00, $80, $80, $85, $00, $07, $84, $02, $00, $05, $85, $00,
-0970   48AF 00 07 84 02 
-0970   48B3 00 05 85 00 
-0971   48B7 02 01 02 00 	DEFB $02, $01, $02, $00, $00, $00, $00, $00, $00, $00, $00, $00
-0971   48BB 00 00 00 00 
-0971   48BF 00 00 00 00 
-0972   48C3             pirate3sprites4x4       ; these are 16 bytes each 4 by 4)
-0973   48C3 05 85 05 00 	DEFB $05, $85, $05, $00, $02, $80, $80, $86, $00, $07, $84, $02,
-0973   48C7 02 80 80 86 
-0973   48CB 00 07 84 02 
-0974   48CF 87 05 85 00 	DEFB $87, $05, $85, $00, $04, $85, $05, $00, $02, $80, $80, $84,
-0974   48D3 04 85 05 00 
-0974   48D7 02 80 80 84 
-0975   48DB 00 07 84 00 	DEFB $00, $07, $84, $00, $02, $01, $85, $00, $00, $85, $05, $87,
-0975   48DF 02 01 85 00 
-0975   48E3 00 85 05 87 
-0976   48E7 06 80 80 01 	DEFB $06, $80, $80, $01, $01, $07, $84, $00, $87, $05, $85, $00
-0976   48EB 01 07 84 00 
-0976   48EF 87 05 85 00 
-0977   48F3                 
-0978   48F3             ; used to clear current location before move    
-0979   48F3             blankSprite
-0980   48F3 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
-0980   48F7 00 00 00 00 
-0981   48FB 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
-0981   48FF 00 00 00 00 
-0982   4903 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
-0982   4907 00 00 00 00 
-0983   490B 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
-0983   490F 00 00 00 00 
-0984   4913 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
-0984   4917 00 00 00 00 
-0985   491B 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
-0985   491F 00 00 00 00 
-0986   4923 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
-0986   4927 00 00 00 00 
-0987   492B 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0    
-0987   492F 00 00 00 00 
-0988   4933 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
-0988   4937 00 00 00 00 
-0989   493B 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0      
-0989   493F 00 00 00 00 
-0990   4943 08 08 00 00     DEFB   8,  8,  0,  0,  0,  0,  0,  0      
-0990   4947 00 00 00 00 
-0991   494B             blockFilled    ;8*10
-0992   494B 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
-0992   494F 08 08 08 08 
-0993   4953 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
-0993   4957 08 08 08 08 
-0994   495B 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
-0994   495F 08 08 08 08 
-0995   4963 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
-0995   4967 08 08 08 08 
-0996   496B 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
-0996   496F 08 08 08 08 
-0997   4973 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
-0997   4977 08 08 08 08 
-0998   497B 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
-0998   497F 08 08 08 08 
-0999   4983 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
-0999   4987 08 08 08 08 
-1000   498B 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8     
-1000   498F 08 08 08 08 
-1001   4993 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8    
-1001   4997 08 08 08 08 
-1002   499B             
-1003   499B             pirateValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
-1004   499B 00              DEFB 0
-1005   499C             playerXPos
-1006   499C 00              DEFB 0
-1007   499D             evenOddLoopFlag
-1008   499D 00              DEFB 0
-1009   499E             evenOddLoopCount    
-1010   499E 00              DEFB 0
-1011   499F             enemySpriteZeroPos_ST  
-1012   499F 00 00           DEFW 0
-1013   49A1             enemySpriteOnePos_ST    
-1014   49A1 00 00           DEFW 0
-1015   49A3             enemySpriteZeroPos_END
-1016   49A3 00 00           DEFW 0
-1017   49A5             enemySpriteOnePos_END   
-1018   49A5 00 00           DEFW 0
-1019   49A7             enemySpriteZeroPos_DIR
-1020   49A7 00 00           DEFW 0
-1021   49A9             enemySpriteOnePos_DIR  
-1022   49A9 00 00           DEFW 0
-1023   49AB             enemySpriteZeroPos_CUR
-1024   49AB 00 00           DEFW 0
-1025   49AD             enemySpriteOnePos_CUR
-1026   49AD 00 00           DEFW 0
-1027   49AF             enemySpriteZeroPos_RATE
-1028   49AF 00              DEFB 0
-1029   49B0             enemySpriteOnePos_RATE
-1030   49B0 00              DEFB 0    
-1031   49B1             TEMP_enemySpritePointer
-1032   49B1 00 00           DEFW 0
-1033   49B3             TEMP_enemySpritePos_CUR
-1034   49B3 00 00           DEFW 0
-1035   49B5             enemySpriteZero_HorizVert
-1036   49B5 00              DEFB 0
-1037   49B6             enemySpriteOne_HorizVert    
-1038   49B6 00              DEFB 0
-1039   49B7             TEMP_enemySpriteFrame
-1040   49B7 00              DEFB 0
-1041   49B8             enemySpriteFrameZero
-1042   49B8 00              DEFB 0
-1043   49B9             enemySpriteFrameOne    
-1044   49B9 00              DEFB 0
-1045   49BA             enemySprites   ;; keeping these to 4*4 for speed and size
-1046   49BA             enemySprite4by4BlankPointer
-1047   49BA 00 00           DEFW 0
-1048   49BC             YSpeed   
-1049   49BC 00              DEFB 0
-1050   49BD             currentPlayerLocation 
-1051   49BD 00 00           DEFW 0
-1052   49BF             MissileInFlightFlag
-1053   49BF 00              DEFB 0
-1054   49C0             missileCountDown
-1055   49C0 00              DEFB 0
-1056   49C1             currentMissilePosition    
-1057   49C1 00 00           DEFW 0
-1058   49C3             enemySprite5by8Blank
-1059   49C3 00 00 00 00     DEFB 0, 0, 0 ,0, 0
-1059   49C7 00 
-1060   49C8 00 00 00 00     DEFB 0, 0, 0 ,0, 0
-1060   49CC 00 
-1061   49CD 00 00 00 00     DEFB 0, 0, 0 ,0, 0
-1061   49D1 00 
-1062   49D2 00 00 00 00     DEFB 0, 0, 0 ,0, 0
-1062   49D6 00 
-1063   49D7 00 00 00 00     DEFB 0, 0, 0 ,0, 0 
-1063   49DB 00 
-1064   49DC 00 00 00 00     DEFB 0, 0, 0 ,0, 0
-1064   49E0 00 
-1065   49E1 00 00 00 00     DEFB 0, 0, 0 ,0, 0
-1065   49E5 00 
-1066   49E6 00 00 00 00     DEFB 0, 0, 0 ,0, 0     
-1066   49EA 00 
-1067   49EB             deadPlayerSpritePointer
-1068   49EB 00 00           DEFW 0
-1069   49ED             playerSpritePointer
-1070   49ED 00 00           DEFW 0 
-1071   49EF             pirateTopLeftPosition
-1072   49EF 00 00           DEFW 0 
-1073   49F1             pirateRowLeftPositionTemp
-1074   49F1 00 00           DEFW 0     
-1075   49F3             pirateValidBitMapMaskTemp
-1076   49F3 00              DEFB 0
-1077   49F4             pirateSpriteCycleCount    
-1078   49F4 00              DEFB 0
-1079   49F5             pirateSpritesPointer
-1080   49F5 00 00           DEFW 0
-1081   49F7             pirateDirUpdate
-1082   49F7 01 00           DEFW 1
-1083   49F9             pirateXPos
-1084   49F9 00              DEFB 0    
-1085   49FA             playerLives
-1086   49FA 00              DEFB 0    
-1087   49FB             score_mem_tens
-1088   49FB 00              DEFB 0
-1089   49FC             score_mem_hund
-1090   49FC 00              DEFB 0
-1091   49FD             last_score_mem_tens
-1092   49FD 00              DEFB 0
-1093   49FE             last_score_mem_hund
-1094   49FE 00              DEFB 0       
-1095   49FF             jollyRogerDirUpdate
-1096   49FF 01 00           DEFW 1
-1097   4A01             jollyRogerXPos
-1098   4A01 00              DEFB 0
-1099   4A02             jollyRogerLocation
-1100   4A02 00 00           DEFW 0
-1101   4A04             previousJollyRogerLocation    
-1102   4A04 00 00           DEFW 0
-1103   4A06             gameOverRestartFlag    
-1104   4A06 00              DEFB 0    
-1105   4A07             LivesText
-1106   4A07 31 2E 3B 2A     DEFB _L,_I,_V,_E,_S,_EQ,$ff    
-1106   4A0B 38 14 FF 
-1107   4A0E             TopLineText
-1108   4A0E 38 28 34 37     DEFB _S,_C,_O,_R,_E,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,_L,_I,_V,_E,_S,__,__,__,__,$ff
-1108   4A12 2A 00 00 00 
-1108   4A16 00 00 00 00 
-1108   4A1A 00 00 00 00 
-1108   4A1E 00 00 00 00 
-1108   4A22 00 00 31 2E 
-1108   4A26 3B 2A 38 00 
-1108   4A2A 00 00 00 FF 
-1109   4A2E             
-1110   4A2E             title_screen_txt
-1111   4A2E 3F 3D 24 1D 	DEFB	_Z,_X,_8,_1,__,_P,_I,_R,_A,_T,_E,__,_I,_N,_V,_A,_D,_E,_R,_S,$ff
-1111   4A32 00 35 2E 37 
-1111   4A36 26 39 2A 00 
-1111   4A3A 2E 33 3B 26 
-1111   4A3E 29 2A 37 38 
-1111   4A42 FF 
-1112   4A43             keys_screen_txt_1
-1113   4A43 38 00 39 34 	DEFB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,__,_P,__,_R,_I,_G,_H,_T,$ff
-1113   4A47 00 38 39 26 
-1113   4A4B 37 39 1A 00 
-1113   4A4F 34 00 31 2A 
-1113   4A53 2B 39 1A 00 
-1113   4A57 35 00 37 2E 
-1113   4A5B 2C 2D 39 FF 
-1114   4A5F             keys_screen_txt_2
-1115   4A5F 00 00 00 00 	DEFB	__,__,__,__,__,__,__,_Z,__,_O,_R,__,_S,_P,_A,_C,_E,__,_EQ,__,_F,_I,_R,_E,,$ff    
-1115   4A63 00 00 00 3F 
-1115   4A67 00 34 37 00 
-1115   4A6B 38 35 26 28 
-1115   4A6F 2A 00 14 00 
-1115   4A73 2B 2E 37 2A 
-1115   4A77 00 FF 
-1116   4A79             
-1117   4A79             game_objective_txt
-1118   4A79 39 34 00 3C 	DEFB	_T,_O,__,_W,_I,_N,__,_S,_U,_R,_V,_I,_V,_E,__, _A,_L,_L,__,_A,_L,_I,_E,_N,_S,$ff
-1118   4A7D 2E 33 00 38 
-1118   4A81 3A 37 3B 2E 
-1118   4A85 3B 2A 00 26 
-1118   4A89 31 31 00 26 
-1118   4A8D 31 2E 2A 33 
-1118   4A91 38 FF 
-1119   4A93             	
-1120   4A93             last_Score_txt
-1121   4A93 15 15 15 15 	DEFB 21,21,21,21,_L,_A,_S,_T,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff	
-1121   4A97 31 26 38 39 
-1121   4A9B 00 00 38 28 
-1121   4A9F 34 37 2A 15 
-1121   4AA3 15 15 15 FF 
-1122   4AA7             high_Score_txt
-1123   4AA7 15 15 15 15 	DEFB 21,21,21,21,_H,_I,_G,_H,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff		
-1123   4AAB 2D 2E 2C 2D 
-1123   4AAF 00 00 38 28 
-1123   4AB3 34 37 2A 15 
-1123   4AB7 15 15 15 FF 
-1124   4ABB             credits_and_version_1
-1125   4ABB 00 27 3E 00 	DEFB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
-1125   4ABF 26 00 35 2E 
-1125   4AC3 31 30 2E 33 
-1125   4AC7 2C 39 34 33 
-1125   4ACB 00 1E 1C 1E 
-1125   4ACF 20 FF 
-1126   4AD1             credits_and_version_2
-1127   4AD1 00 00 3B 2A 	DEFB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_0,_DT,_1,$ff    
-1127   4AD5 37 38 2E 34 
-1127   4AD9 33 00 3B 1C 
-1127   4ADD 1B 1C 1B 1D 
-1127   4AE1 FF 
-1128   4AE2             credits_and_version_3
-1129   4AE2 00 00 00 3E 	DEFB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff       
-1129   4AE6 34 3A 39 3A 
-1129   4AEA 27 2A 0E 27 
-1129   4AEE 3E 39 2A 2B 
-1129   4AF2 34 37 2A 3B 
-1129   4AF6 2A 37 FF 
-1130   4AF9                 
-1131   4AF9                
-1132   4AF9 80          VariablesEnd:   DEFB $80
-1133   4AFA             BasicEnd: 
-1134   4AFA             #END
-1135   4AFA             
+0169   4082             
+0170   4082             
+0171   4082             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0172   4082 C3 9A 40    	jp intro_title		; main entry poitn to the code ships the memory definitions
+0173   4085             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0174   4085             	
+0175   4085             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0176   4085 C3 9A 40    	jp intro_title		; main entry poitn to the code ships the memory definitions
+0177   4088             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0178   4088             introWaitLoop
+0179   4088 06 40       	ld b,64
+0180   408A             introWaitLoop_1
+0181   408A C5              push bc	
+0182   408B C1              pop bc
+0183   408C 10 FC       	djnz introWaitLoop_1
+0184   408E C3 46 41        jp read_start_key_1     ;; have to have 2 labels as not a call return
+0185   4091                
+0186   4091             secondIntroWaitLoop    
+0187   4091                
+0188   4091 06 40           ld b, 64
+0189   4093             introWaitLoop_2
+0190   4093 C5              push bc
+0191   4094 C1              pop bc
+0192   4095 10 FC           djnz introWaitLoop_2
+0193   4097             
+0194   4097 C3 51 41    	jp read_start_key_2
+0195   409A             	
+0196   409A             intro_title
+0197   409A CD 2A 0A    	call CLS  ; clears screen and sets the boarder
+0198   409D             ;    ld a, (gameOverRestartFlag)
+0199   409D             ;    cp 1
+0200   409D             ;    call z, gameOverDeathScene
+0201   409D                 
+0202   409D                 
+0203   409D AF              xor a
+0204   409E 32 BA 4E        ld (gameOverRestartFlag), a
+0205   40A1                     
+0206   40A1 3A AF 4E        ld a, (score_mem_tens)
+0207   40A4 32 B1 4E        ld (last_score_mem_tens),a
+0208   40A7 3A B0 4E        ld a, (score_mem_hund)
+0209   40AA 32 B2 4E        ld (last_score_mem_hund),a        
+0210   40AD 32 9B 4E        ld (sharkPosX), a
+0211   40B0 32 9C 4E        ld (sharkValid), a
+0212   40B3 32 9D 4E        ld (sharkBonusCountUp), a
+0213   40B6                 
+0214   40B6 01 06 00    	ld bc,6
+0215   40B9 11 E3 4E    	ld de,title_screen_txt
+0216   40BC CD AD 47    	call printstring
+0217   40BF 01 27 00    	ld bc,6+33
+0218   40C2 11 E3 4E    	ld de,title_screen_txt
+0219   40C5 CD AD 47    	call printstring
+0220   40C8 01 48 00        ld bc,6+66
+0221   40CB 11 E3 4E    	ld de,title_screen_txt
+0222   40CE CD AD 47    	call printstring
+0223   40D1 01 CA 00    	ld bc,202    
+0224   40D4 11 F8 4E    	ld de,keys_screen_txt_1
+0225   40D7 CD AD 47    	call printstring		
+0226   40DA                 
+0227   40DA 01 EB 00        ld bc,235    
+0228   40DD 11 13 4F    	ld de,keys_screen_txt_2
+0229   40E0 CD AD 47    	call printstring		
+0230   40E3                 
+0231   40E3             
+0232   40E3             
+0233   40E3 01 2D 01    	ld bc,301
+0234   40E6 11 48 4F    	ld de,game_objective_boarder
+0235   40E9 CD AD 47    	call printstring	
+0236   40EC 01 4E 01    	ld bc,334
+0237   40EF 11 2D 4F    	ld de,game_objective_txt
+0238   40F2 CD AD 47    	call printstring	    
+0239   40F5 01 6F 01    	ld bc,367
+0240   40F8 11 48 4F    	ld de,game_objective_boarder
+0241   40FB CD AD 47    	call printstring	
+0242   40FE                 
+0243   40FE 01 B4 01    	ld bc,436
+0244   4101 11 63 4F    	ld de,last_Score_txt
+0245   4104 CD AD 47    	call printstring	
+0246   4107             	
+0247   4107 01 DC 01        ld bc, 476
+0248   410A 11 B2 4E        ld de, last_score_mem_hund ; load address of hundreds
+0249   410D CD E0 47    	call printNumber    
+0250   4110 01 DE 01    	ld bc, 478			; bc is offset from start of display
+0251   4113 11 B1 4E    	ld de, last_score_mem_tens ; load address of  tens		
+0252   4116 CD E0 47    	call printNumber	
+0253   4119 01 19 02    	ld bc,537	
+0254   411C 11 8B 4F    	ld de,credits_and_version_1
+0255   411F CD AD 47    	call printstring		
+0256   4122 01 39 02    	ld bc,569	
+0257   4125 11 A1 4F    	ld de,credits_and_version_2
+0258   4128 CD AD 47    	call printstring	
+0259   412B 01 7A 02    	ld bc,634	
+0260   412E 11 B2 4F    	ld de,credits_and_version_3
+0261   4131 CD AD 47    	call printstring
+0262   4134 11 11 02        ld de, 529    
+0263   4137 21 16 48        ld hl, Display+1 
+0264   413A 19              add hl, de        
+0265   413B EB              ex de, hl
+0266   413C 21 2E 4B        ld hl, playerSpriteData
+0267   413F 0E 08           ld c, 8
+0268   4141 06 08           ld b, 8    
+0269   4143 CD 35 47        call drawSprite
+0270   4146                
+0271   4146                
+0272   4146             	
+0273   4146             read_start_key_1
+0274   4146 3E FD       	ld a, KEYBOARD_READ_PORT_A_TO_G	
+0275   4148 DB FE       	in a, (KEYBOARD_READ_PORT)					; read from io port	
+0276   414A CB 4F       	bit 1, a									; check S key pressed 
+0277   414C C2 91 40    	jp nz, secondIntroWaitLoop    
+0278   414F                 ;; else drop into preinit then initVariables
+0279   414F 18 0B           jr preinit
+0280   4151                 
+0281   4151             read_start_key_2
+0282   4151 3E FD       	ld a, KEYBOARD_READ_PORT_A_TO_G	
+0283   4153 DB FE       	in a, (KEYBOARD_READ_PORT)					; read from io port	
+0284   4155 CB 4F       	bit 1, a									; check S key pressed 
+0285   4157 C2 88 40    	jp nz, introWaitLoop
+0286   415A 18 00           jr preinit  ; not really necessary
+0287   415C                 
+0288   415C                 
+0289   415C             preinit
+0290   415C             ;; initialise variables that are once per game load/start
+0291   415C CD 2A 0A        call CLS
+0292   415F             
+0293   415F             initVariables
+0294   415F             
+0295   415F                 ; draw top line where lives and score go
+0296   415F 11 C3 4E        ld de, TopLineText
+0297   4162 01 02 00        ld bc, 2
+0298   4165 CD AD 47        call printstring
+0299   4168             
+0300   4168 AF              xor a
+0301   4169 3A 6C 4E        ld a, (MissileInFlightFlag)
+0302   416C 32 4A 4E        ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
+0303   416F 32 47 4E        ld (nextPirateToFireIndex), a
+0304   4172 32 72 4E        ld (restartLevelFlag), a
+0305   4175                 
+0306   4175 3A 6D 4E        ld a, (missileCountDown)
+0307   4178 3E 09           ld a, 9
+0308   417A 32 49 4E        ld (playerXPos), a
+0309   417D 21 2E 4B        ld hl, playerSpriteData
+0310   4180 22 A0 4E        ld (playerSpritePointer), hl 
+0311   4183 21 16 48        ld hl, Display+1 
+0312   4186 11 7D 02        ld de, PLAYER_START_POS
+0313   4189 19              add hl, de 
+0314   418A 22 6A 4E        ld (currentPlayerLocation), hl
+0315   418D 21 16 48        ld hl, Display+1 
+0316   4190 11 06 00        ld de, 6
+0317   4193 19              add hl, de     
+0318   4194 22 B6 4E        ld (jollyRogerLocation), hl
+0319   4197 21 01 00        ld hl, 1
+0320   419A 22 B3 4E        ld (jollyRogerDirUpdate),hl
+0321   419D 3E 05           ld a, 5
+0322   419F 32 B5 4E        ld (jollyRogerXPos),a
+0323   41A2                 
+0324   41A2 21 01 00        ld hl, 1
+0325   41A5 22 AB 4E        ld (pirateDirUpdate),hl
+0326   41A8 3E 05           ld a, 5
+0327   41AA 32 AD 4E        ld (pirateXPos),a
+0328   41AD                 
+0329   41AD 3E 03           ld a, 3 
+0330   41AF 32 AE 4E        ld (playerLives), a
+0331   41B2                 
+0332   41B2 3E 08           ld a, 8
+0333   41B4 32 70 4E        ld (levelCountDown), a
+0334   41B7                 
+0335   41B7 3E 01           ld a, $01
+0336   41B9 27              daa
+0337   41BA 32 71 4E        ld (gameLevel), a
+0338   41BD                 
+0339   41BD AF              xor a
+0340   41BE 32 BA 4E        ld (gameOverRestartFlag), a        
+0341   41C1 3A AF 4E        ld a, (score_mem_tens)
+0342   41C4 32 B1 4E        ld (last_score_mem_tens),a
+0343   41C7 3A B0 4E        ld a, (score_mem_hund)
+0344   41CA 32 B2 4E        ld (last_score_mem_hund),a        
+0345   41CD                 
+0346   41CD                 
+0347   41CD             
+0348   41CD 21 16 48        ld hl, Display+1 
+0349   41D0             #ifdef DEBUG_START_PIRATES_LOWER
+0350   41D0 11 6E 01        ld de, 366
+0351   41D3~            #else    
+0352   41D3~                ld de, 36
+0353   41D3             #endif    
+0354   41D3 19              add hl, de 
+0355   41D4 22 A2 4E        ld (pirateTopLeftPosition), hl
+0356   41D7 AF              xor a
+0357   41D8 32 A8 4E        ld (pirateSpriteCycleCount), a
+0358   41DB                 ;ld hl, pirate3sprites
+0359   41DB 21 6E 4D        ld hl, pirate3sprites4x4
+0360   41DE 22 A9 4E        ld (pirateSpritesPointer), hl 
+0361   41E1 21 01 00        ld hl, 1 
+0362   41E4 22 AB 4E        ld (pirateDirUpdate), hl
+0363   41E7 3E FF           ld a, $ff   ; every pirate is alive
+0364   41E9                 ;ld a, $01   ; for test only bottom right pirate is alive
+0365   41E9                 ;ld a, $80   ; for test only top left pirate is alive    
+0366   41E9                 ;ld a, $55   ; for test every other pirate is alive
+0367   41E9 32 46 4E        ld (pirateValidBitMap), a
+0368   41EC                 
+0369   41EC AF              xor a
+0370   41ED 32 BB 4E        ld (goNextLevelFlag), a
+0371   41F0                 
+0372   41F0             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+0373   41F0             gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0374   41F0             
+0375   41F0 06 02       	ld b,VSYNCLOOP
+0376   41F2             waitForTVSync	
+0377   41F2 CD F7 47    	call vsync
+0378   41F5 10 FB       	djnz waitForTVSync
+0379   41F7                 
+0380   41F7 3A BB 4E        ld a, (goNextLevelFlag)
+0381   41FA FE 01           cp 1
+0382   41FC CC 5F 46        call z, executeNextLevelStart
+0383   41FF             
+0384   41FF 3A 72 4E        ld a, (restartLevelFlag)
+0385   4202 FE 01           cp 1
+0386   4204 CC A3 45        call z, executeRestartLevel
+0387   4207                 
+0388   4207             
+0389   4207 3A 70 4E        ld a, (levelCountDown)
+0390   420A 47              ld b, a
+0391   420B 3A 4B 4E        ld a, (evenOddLoopCount)
+0392   420E 3C              inc a
+0393   420F B8              cp b    
+0394   4210 28 09           jr z, resetEvenOddAndSetFlag
+0395   4212 32 4B 4E        ld (evenOddLoopCount), a
+0396   4215 AF              xor a
+0397   4216 32 4A 4E        ld (evenOddLoopFlag), a    ; used for multi rate enemies    
+0398   4219 18 09           jr continueWithGameLoop
+0399   421B                 
+0400   421B             resetEvenOddAndSetFlag    
+0401   421B AF              xor a
+0402   421C 32 4B 4E        ld (evenOddLoopCount), a
+0403   421F 3E 01           ld a, 1
+0404   4221 32 4A 4E        ld (evenOddLoopFlag), a    ; used for multi rate enemies
+0405   4224             
+0406   4224             continueWithGameLoop        
+0407   4224             
+0408   4224                   
+0409   4224 3A BA 4E        ld a, (gameOverRestartFlag)
+0410   4227 FE 01           cp 1
+0411   4229 CA 9A 40        jp z, intro_title
+0412   422C                 
+0413   422C                 
+0414   422C 3A 9C 4E        ld a, (sharkValid)
+0415   422F FE 01           cp 1
+0416   4231 CC D4 46        call z, drawSharkBonus   
+0417   4234                 
+0418   4234 CD 9F 47        call setRandomPirateToShoot   ; this sets nextPirateToFireIndex
+0419   4237             
+0420   4237 CD 3B 44        call drawMainInvaderGrid
+0421   423A                 
+0422   423A CD 20 43        call pirateFire   ; this will use and nextPirateToFireIndex also check pirateFiringFlag
+0423   423D                 
+0424   423D                 
+0425   423D ED 5B 6A 4E     ld de, (currentPlayerLocation)
+0426   4241 21 9E 4D        ld hl, blankSprite
+0427   4244 0E 08           ld c, 8
+0428   4246 06 04           ld b, 4 
+0429   4248 CD 35 47        call drawSprite
+0430   424B                 
+0431   424B                 ; ld hl, blankSprite
+0432   424B                 ; ld de, (previousJollyRogerLocation)
+0433   424B                 ; ld c, 8
+0434   424B                 ; ld b, 8    
+0435   424B                 ; call drawSprite    
+0436   424B                 ; call updateJollyRoger    
+0437   424B                 
+0438   424B                 
+0439   424B             
+0440   424B                 
+0441   424B                     
+0442   424B CD 5C 47        call printLivesAndScore   
+0443   424E                    
+0444   424E                 ;call blankEnemySprites
+0445   424E                 ;call drawEnemySprites        
+0446   424E                 ;call updateEnemySpritePositions
+0447   424E                    
+0448   424E                
+0449   424E             ; keyboard layout for reading keys on ZX81
+0450   424E             ; BIT   left block      right block  BIT
+0451   424E             ; off                                off in <port>, when ld a, <port>
+0452   424E             ;       0  1 2 3 4     4 3 2 1 0                 <<< bit to check for each column after in a, $fe 
+0453   424E             ; 3   ( 1  2 3 4 5 ) ( 6 7 8 9 0 )     4
+0454   424E             ; 2   ( Q  W E R T ) ( Y U I O P )     5
+0455   424E             ; 1   ( A  S D F G ) ( H I K L n/l)    6
+0456   424E             ; 0   (sft Z X C V ) ( B N M . spc)    7
+0457   424E             ;
+0458   424E             ; to read keys 1 2 3 4 5
+0459   424E             ; set all bits except bit 3 of register A = 1 1 1 1 0 1 1 1= f7, then execute in a, $fe  (fe is the "keyboard read port")
+0460   424E             ; now register a will contain a bit pattern to check for which key in that block was set, eg Key "1" = bit 0 of a
+0461   424E             ; ld a, $f7    
+0462   424E             ; in a, $fe    
+0463   424E             ; similarly for the rest, to read from block A S D F G, set a to 1 1 1 1 1 1 1 0 1 = $fd
+0464   424E             
+0465   424E                 
+0466   424E                 ;; read keys
+0467   424E 3E DF           ld a, KEYBOARD_READ_PORT_P_TO_Y			
+0468   4250 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port	
+0469   4252 CB 4F           bit 1, a                            ; O
+0470   4254 CA 75 42        jp z, moveLeft
+0471   4257             
+0472   4257             
+0473   4257 3E DF           ld a, KEYBOARD_READ_PORT_P_TO_Y			
+0474   4259 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0475   425B CB 47           bit 0, a					        ; P
+0476   425D CA 9D 42        jp z, moveRight
+0477   4260             
+0478   4260             
+0479   4260 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+0480   4262 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0481   4264 CB 47           bit 0, a						    ; SPACE
+0482   4266 CA C5 42        jp z, doFireMissile
+0483   4269                 
+0484   4269 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+0485   426B DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0486   426D CB 4F           bit 1, a						    ; Z
+0487   426F CA C5 42        jp z, doFireMissile    
+0488   4272             skipFireKeyDetect_1    
+0489   4272 C3 E1 42        jp updateRestOfScreen                       ; if no key pressed continue
+0490   4275             
+0491   4275             moveLeft         
+0492   4275 3A 49 4E        ld a, (playerXPos)
+0493   4278 3D              dec a
+0494   4279 FE 00           cp 0      ;;; this prevents the player moving past edge, but if it's a door
+0495   427B                           ;; trigger seperate code to move to new room
+0496   427B CA E1 42        jp z, updateRestOfScreen   
+0497   427E 32 49 4E        ld (playerXPos), a
+0498   4281                 
+0499   4281                     
+0500   4281 2A 6A 4E        ld hl, (currentPlayerLocation)
+0501   4284 2B              dec hl
+0502   4285 22 6A 4E        ld (currentPlayerLocation), hl  
+0503   4288             
+0504   4288                  
+0505   4288 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+0506   428A DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0507   428C CB 47           bit 0, a						    ; SPACE
+0508   428E CA C5 42        jp z, doFireMissile
+0509   4291                 
+0510   4291 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+0511   4293 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0512   4295 CB 4F           bit 1, a						    ; Z
+0513   4297 CA C5 42        jp z, doFireMissile        
+0514   429A C3 E1 42        jp updateRestOfScreen 
+0515   429D                 
+0516   429D             moveRight       
+0517   429D 3A 49 4E        ld a, (playerXPos)
+0518   42A0 3C              inc a
+0519   42A1 FE 18           cp 24          ;;; this prevents the player moving past edge, but if it's a door
+0520   42A3                                ;; trigger seperate code to move to new room
+0521   42A3                 
+0522   42A3 CA E1 42        jp z, updateRestOfScreen   
+0523   42A6 32 49 4E        ld (playerXPos), a
+0524   42A9                 
+0525   42A9                 
+0526   42A9                 
+0527   42A9 2A 6A 4E        ld hl, (currentPlayerLocation)    
+0528   42AC 23              inc hl
+0529   42AD 22 6A 4E        ld (currentPlayerLocation), hl     
+0530   42B0               
+0531   42B0 3E 7F           ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+0532   42B2 DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0533   42B4 CB 47           bit 0, a						    ; SPACE
+0534   42B6 CA C5 42        jp z, doFireMissile
+0535   42B9             
+0536   42B9 3E FE           ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+0537   42BB DB FE           in a, (KEYBOARD_READ_PORT)					; read from io port		
+0538   42BD CB 4F           bit 1, a						    ; Z
+0539   42BF CA C5 42        jp z, doFireMissile         
+0540   42C2             
+0541   42C2 C3 E1 42        jp updateRestOfScreen 
+0542   42C5                 
+0543   42C5             doFireMissile      ; triggered when jump key pressed just sets the       
+0544   42C5 3A 6C 4E        ld a, (MissileInFlightFlag)
+0545   42C8 FE 01           cp 1
+0546   42CA CA E1 42        jp z, skipLaunchMissile
+0547   42CD                 ;; we first need to work out where the missiles should fire from based on current player location
+0548   42CD                 ;; unless we're in power up mode then just fires form middle of nose of ship
+0549   42CD                 
+0550   42CD                 ;; in power up mode we'll fire from nose and wing tips :) (note: not yet implemented) 
+0551   42CD 2A 6A 4E        ld hl, (currentPlayerLocation)
+0552   42D0 11 E1 FF        ld de, -31  
+0553   42D3 19              add hl, de    
+0554   42D4 22 6E 4E        ld (currentMissilePosition), hl
+0555   42D7                 ;;; setup the missile "Time To Live"  (like ethernet TTL right :)
+0556   42D7 3E 12           ld a, MISSILE_COUNTDOWN_INIT
+0557   42D9 32 6D 4E        ld (missileCountDown), a
+0558   42DC 3E 01           ld a, 1
+0559   42DE 32 6C 4E        ld (MissileInFlightFlag), a
+0560   42E1                       
+0561   42E1             
+0562   42E1             skipLaunchMissile
+0563   42E1             updateRestOfScreen 
+0564   42E1                 
+0565   42E1 2A A0 4E        ld hl, (playerSpritePointer)    
+0566   42E4 ED 5B 6A 4E     ld de, (currentPlayerLocation)
+0567   42E8 0E 08           ld c, 8
+0568   42EA 06 04           ld b, 4    
+0569   42EC CD 35 47        call drawSprite
+0570   42EF             
+0571   42EF             ;; the idea is to use the skull and cross bones as an end of level "boss"
+0572   42EF~            #if 0    
+0573   42EF~                ld hl, jollyRoger
+0574   42EF~                ld de, (jollyRogerLocation)
+0575   42EF~                ld c, 8
+0576   42EF~                ld b, 8    
+0577   42EF~                call drawSprite    
+0578   42EF~                call updateJollyRoger    
+0579   42EF             #endif    
+0580   42EF                 
+0581   42EF 3A 6C 4E        ld a, (MissileInFlightFlag)
+0582   42F2 FE 00           cp 0
+0583   42F4 CA 1D 43        jp z, skipMissileDraw
+0584   42F7                 
+0585   42F7 2A 6E 4E        ld hl, (currentMissilePosition)
+0586   42FA 11 21 00        ld de, 33
+0587   42FD 19              add hl, de
+0588   42FE EB              ex de, hl    
+0589   42FF 21 9E 4D        ld hl, blankSprite
+0590   4302 0E 04           ld c, 4
+0591   4304 06 04           ld b, 4 
+0592   4306 CD 35 47        call drawSprite    
+0593   4309                 
+0594   4309 21 6E 4B        ld hl, missileData
+0595   430C ED 5B 6E 4E     ld de, (currentMissilePosition)        
+0596   4310 0E 04           ld c, 4
+0597   4312 06 04           ld b, 4    
+0598   4314 CD 35 47        call drawSprite
+0599   4317                     
+0600   4317 CD FE 44        call checkIfMissileHit    
+0601   431A                    
+0602   431A CD 21 43        call updateMissilePosition
+0603   431D             skipMissileDraw
+0604   431D                 
+0605   431D C3 F0 41        jp gameLoop
+0606   4320                 
+0607   4320             
+0608   4320             pirateFire
+0609   4320 C9              ret
+0610   4321                 
+0611   4321                 
+0612   4321             updateMissilePosition
+0613   4321 3A 6D 4E          ld a, (missileCountDown)
+0614   4324 3D                dec a
+0615   4325 FE 00             cp 0
+0616   4327 CA 39 43          jp z, noMissileUpClearMissile
+0617   432A                  
+0618   432A 32 6D 4E          ld (missileCountDown), a      
+0619   432D                   
+0620   432D 2A 6E 4E          ld hl, (currentMissilePosition)    
+0621   4330 11 DF FF          ld de, -33
+0622   4333 19                add hl, de
+0623   4334 22 6E 4E          ld (currentMissilePosition), hl
+0624   4337 18 04             jr noMissileUpdate
+0625   4339             noMissileUpClearMissile
+0626   4339 AF                xor a
+0627   433A 32 6C 4E          ld (MissileInFlightFlag), a 
+0628   433D             noMissileUpdate      
+0629   433D C9                ret
+0630   433E                   
+0631   433E             
+0632   433E             updatePirateXPos
+0633   433E~            #ifdef DEBUG_NO_MOVE_PIRATE
+0634   433E~                ret   
+0635   433E             #endif    
+0636   433E             
+0637   433E 3A AD 4E        ld a, (pirateXPos)            
+0638   4341 FE 0E           cp 14
+0639   4343 28 06           jr z, reversePirateDirToNeg
+0640   4345 FE 03           cp 3
+0641   4347 28 4F           jr z, reversePirateDirToPos
+0642   4349                     
+0643   4349 18 7F           jr endOfUpdatePirateXPos    
+0644   434B                 
+0645   434B             reversePirateDirToNeg
+0646   434B 3A 9D 4E        ld a, (sharkBonusCountUp)
+0647   434E 3C              inc a
+0648   434F 32 9D 4E        ld (sharkBonusCountUp), a
+0649   4352 FE 02           cp 2
+0650   4354 28 02           jr z, triggerShark
+0651   4356 18 0E           jr notriggerShark
+0652   4358             triggerShark    
+0653   4358 AF              xor a
+0654   4359 32 9D 4E        ld (sharkBonusCountUp), a
+0655   435C 3E 18           ld a, 24
+0656   435E 32 9B 4E        ld (sharkPosX), a
+0657   4361 3E 01           ld a, 1
+0658   4363 32 9C 4E        ld (sharkValid), a
+0659   4366                 
+0660   4366             notriggerShark    
+0661   4366 21 FF FF        ld hl, -1 
+0662   4369 22 AB 4E        ld (pirateDirUpdate), hl
+0663   436C                 ;; also shove down one row
+0664   436C                 ;before we do that we need to blank the line where the pirates "heads" were
+0665   436C ED 5B A2 4E     ld de, (pirateTopLeftPosition)
+0666   4370 21 9E 4D        ld hl, blankSprite
+0667   4373 0E 10           ld c, 16
+0668   4375 06 01           ld b, 1 
+0669   4377 CD 35 47        call drawSprite
+0670   437A 2A A2 4E        ld hl, (pirateTopLeftPosition)
+0671   437D 11 A5 00        ld de, 165
+0672   4380 19              add hl, de
+0673   4381 EB              ex de, hl
+0674   4382 21 9E 4D        ld hl, blankSprite
+0675   4385 0E 10           ld c, 16
+0676   4387 06 01           ld b, 1 
+0677   4389 CD 35 47        call drawSprite
+0678   438C                 ;; finally move one row down
+0679   438C 2A A2 4E        ld hl, (pirateTopLeftPosition)
+0680   438F 11 21 00        ld de, 33
+0681   4392 19              add hl, de
+0682   4393 22 A2 4E        ld (pirateTopLeftPosition),hl   
+0683   4396                 
+0684   4396 18 32           jr endOfUpdatePirateXPos 
+0685   4398                 
+0686   4398             reversePirateDirToPos    
+0687   4398 21 01 00        ld hl, 1 
+0688   439B 22 AB 4E        ld (pirateDirUpdate), hl
+0689   439E                 ;; also shove down one row
+0690   439E                 ;before we do that we need to blank the line where the pirates "heads" were
+0691   439E ED 5B A2 4E     ld de, (pirateTopLeftPosition)
+0692   43A2 21 9E 4D        ld hl, blankSprite
+0693   43A5 0E 10           ld c, 16
+0694   43A7 06 01           ld b, 1 
+0695   43A9 CD 35 47        call drawSprite
+0696   43AC                 ;; and blank the middle bit between the rows of pirates
+0697   43AC 2A A2 4E        ld hl, (pirateTopLeftPosition)
+0698   43AF 11 A5 00        ld de, 165
+0699   43B2 19              add hl, de
+0700   43B3 EB              ex de, hl
+0701   43B4 21 9E 4D        ld hl, blankSprite
+0702   43B7 0E 10           ld c, 16
+0703   43B9 06 01           ld b, 1 
+0704   43BB CD 35 47        call drawSprite
+0705   43BE                 
+0706   43BE                 ;; finally move one row down
+0707   43BE 2A A2 4E        ld hl, (pirateTopLeftPosition)
+0708   43C1 11 21 00        ld de, 33
+0709   43C4 19              add hl, de
+0710   43C5 22 A2 4E        ld (pirateTopLeftPosition),hl    
+0711   43C8 18 00           jr endOfUpdatePirateXPos 
+0712   43CA                 
+0713   43CA             endOfUpdatePirateXPos
+0714   43CA~            #ifdef DEBUG_PIRATE_DIR
+0715   43CA~                ld a,(pirateXPos)  
+0716   43CA~                ld de, 1
+0717   43CA~                call print_number8bits
+0718   43CA             #endif   
+0719   43CA 2A A2 4E        ld hl, (pirateTopLeftPosition)
+0720   43CD                 ;ld (previousPirateLocation), hl
+0721   43CD ED 5B AB 4E     ld de, (pirateDirUpdate)
+0722   43D1 19              add hl, de
+0723   43D2 22 A2 4E        ld (pirateTopLeftPosition), hl
+0724   43D5             
+0725   43D5 2A AB 4E        ld hl, (pirateDirUpdate)    
+0726   43D8 3A AD 4E        ld a, (pirateXPos)
+0727   43DB 85              add a, l
+0728   43DC 32 AD 4E        ld (pirateXPos), a 
+0729   43DF                 
+0730   43DF C9              ret
+0731   43E0                   
+0732   43E0             updateJollyRoger   
+0733   43E0 3A B5 4E        ld a, (jollyRogerXPos)        
+0734   43E3 FE 17           cp 23  
+0735   43E5 28 06           jr z, reverseDirToNeg
+0736   43E7 FE 01           cp 1
+0737   43E9 28 0A           jr z, reverseDirToPos
+0738   43EB                     
+0739   43EB 18 10           jr endOfUpdateJollyRoger    
+0740   43ED                 
+0741   43ED             reverseDirToNeg
+0742   43ED 21 FF FF        ld hl, -1 
+0743   43F0 22 B3 4E        ld (jollyRogerDirUpdate), hl
+0744   43F3 18 08           jr endOfUpdateJollyRoger 
+0745   43F5                 
+0746   43F5             reverseDirToPos    
+0747   43F5 21 01 00        ld hl, 1 
+0748   43F8 22 B3 4E        ld (jollyRogerDirUpdate), hl
+0749   43FB 18 00           jr endOfUpdateJollyRoger 
+0750   43FD                 
+0751   43FD             endOfUpdateJollyRoger    
+0752   43FD                 
+0753   43FD 2A B6 4E        ld hl, (jollyRogerLocation)
+0754   4400 22 B8 4E        ld (previousJollyRogerLocation), hl
+0755   4403 ED 5B B3 4E     ld de, (jollyRogerDirUpdate)
+0756   4407 19              add hl, de
+0757   4408 22 B6 4E        ld (jollyRogerLocation), hl
+0758   440B             
+0759   440B 2A B3 4E        ld hl, (jollyRogerDirUpdate)    
+0760   440E 3A B5 4E        ld a, (jollyRogerXPos)
+0761   4411 85              add a, l
+0762   4412 32 B5 4E        ld (jollyRogerXPos), a 
+0763   4415                 
+0764   4415 C9              ret
+0765   4416             
+0766   4416             blankToLAndROfInvader
+0767   4416 2A A2 4E        ld hl, (pirateTopLeftPosition)    
+0768   4419 11 FF FF        ld de, -1
+0769   441C 19              add hl, de
+0770   441D EB              ex de, hl
+0771   441E 21 73 4E        ld hl, enemySprite5by8Blank
+0772   4421 0E 01           ld c, 1
+0773   4423 06 09           ld b, 9 
+0774   4425 CD 35 47        call drawSprite              
+0775   4428 2A A2 4E        ld hl, (pirateTopLeftPosition)    
+0776   442B 11 10 00        ld de, 16
+0777   442E 19              add hl, de
+0778   442F EB              ex de, hl
+0779   4430 21 73 4E        ld hl, enemySprite5by8Blank
+0780   4433 0E 01           ld c, 1
+0781   4435 06 09           ld b, 9 
+0782   4437 CD 35 47        call drawSprite                  
+0783   443A C9             ret
+0784   443B                
+0785   443B             drawMainInvaderGrid
+0786   443B             
+0787   443B             
+0788   443B                 ;; first check if any piratres are left   
+0789   443B 06 FF           ld b, $ff     ; set a (and then next line b to all ones)
+0790   443D 3A 46 4E        ld a, (pirateValidBitMap)
+0791   4440 A0              and b
+0792   4441 28 02           jr z, setWaveComplete
+0793   4443 18 06           jr checkIfPlayerHitPirates
+0794   4445             setWaveComplete    
+0795   4445 3E 01           ld a, 1
+0796   4447 32 BB 4E        ld (goNextLevelFlag), a
+0797   444A C9              ret
+0798   444B             
+0799   444B             checkIfPlayerHitPirates    
+0800   444B                 ;; second check if the bottom pirate has reached the lowest line
+0801   444B                 ;; if so restart the level and decrease score by 1
+0802   444B                 
+0803   444B                 ;; TODO first version will only check the top left most has reach low point
+0804   444B                 ;; need logic to check if any bottom row pirates left if so let it go lower
+0805   444B 2A A2 4E        ld hl, (pirateTopLeftPosition)
+0806   444E 22 A4 4E        ld (pirateRowLeftPositionTemp), hl 
+0807   4451 21 16 48        ld hl, Display+1
+0808   4454 11 8E 01        ld de, $018e   ; $018e is the offset to the lowest row the pirates should be able to get
+0809   4457 19              add hl, de
+0810   4458 EB              ex de, hl
+0811   4459 2A A4 4E        ld hl, (pirateRowLeftPositionTemp) ;; reload hl with pirateRowLeftPositionTemp   
+0812   445C 7C              ld a, h
+0813   445D BA              cp d
+0814   445E 28 02           jr z, checkNextPirateLowest
+0815   4460 18 0C           jr continueDrawPirates 
+0816   4462             checkNextPirateLowest        
+0817   4462 7D              ld a, l
+0818   4463 BB              cp e
+0819   4464 28 02           jr z, pirateReachedLowest 
+0820   4466 18 06           jr continueDrawPirates 
+0821   4468             pirateReachedLowest
+0822   4468 3E 01           ld a, 1
+0823   446A 32 72 4E        ld (restartLevelFlag), a
+0824   446D C9              ret
+0825   446E             
+0826   446E             continueDrawPirates    
+0827   446E             ;; we have an area of memory which will represent flags for if each of the grid of 5 rows of
+0828   446E             ;; 5 columnsn invaders is valid (ie not been killed). This code will loop round that and 
+0829   446E             ;; display an invader sprite if required       
+0830   446E CD 16 44        call blankToLAndROfInvader
+0831   4471 06 02           ld b, 2
+0832   4473 2A A2 4E        ld hl, (pirateTopLeftPosition)
+0833   4476 22 A4 4E        ld (pirateRowLeftPositionTemp), hl
+0834   4479 3E 80           ld a, $80    ; setup a moving bit mask which we'll use to determine if the pirate is shot or not
+0835   447B 32 A6 4E        ld (pirateValidBitMapMaskTemp), a
+0836   447E                 
+0837   447E                 
+0838   447E             pirateRowDrawLoop    
+0839   447E             
+0840   447E C5             push bc
+0841   447F                     
+0842   447F 06 04               ld b, 4       
+0843   4481             pirateColDrawLoop 
+0844   4481 C5                      push bc 
+0845   4482                             ;; put some logic here to determine if the pirate was shot or not
+0846   4482                             
+0847   4482 3A A6 4E                    ld a, (pirateValidBitMapMaskTemp)
+0848   4485 47                          ld b, a
+0849   4486 3A 46 4E                    ld a, (pirateValidBitMap)
+0850   4489 A0                          and b                
+0851   448A F5                          push af
+0852   448B CB 18                       rr b
+0853   448D 78                          ld a, b
+0854   448E 32 A6 4E                    ld (pirateValidBitMapMaskTemp),a
+0855   4491 F1                          pop af
+0856   4492 28 10                       jr z, skipDrawThisPirate    
+0857   4494                             
+0858   4494                             
+0859   4494 ED 5B A4 4E                 ld de, (pirateRowLeftPositionTemp)
+0860   4498 2A A9 4E                    ld hl, (pirateSpritesPointer)
+0861   449B 0E 04                       ld c, 4
+0862   449D                             ;ld b, 8 
+0863   449D 06 04                       ld b, 4 
+0864   449F CD 35 47                    call drawSprite          
+0865   44A2 18 0E                       jr continueWithPirateLoop
+0866   44A4             skipDrawThisPirate
+0867   44A4                             ;; but draw a blank
+0868   44A4 ED 5B A4 4E                 ld de, (pirateRowLeftPositionTemp)
+0869   44A8 21 9E 4D                    ld hl, blankSprite
+0870   44AB 0E 04                       ld c, 4
+0871   44AD                             ;ld b, 8 
+0872   44AD 06 04                       ld b, 4 
+0873   44AF CD 35 47                    call drawSprite                          
+0874   44B2             continueWithPirateLoop                
+0875   44B2 21 04 00                    ld hl, 4
+0876   44B5 ED 5B A4 4E                 ld de, (pirateRowLeftPositionTemp)
+0877   44B9 19                          add hl, de   
+0878   44BA 22 A4 4E                    ld (pirateRowLeftPositionTemp), hl                
+0879   44BD C1                      pop bc
+0880   44BE 10 C1                   djnz pirateColDrawLoop        
+0881   44C0                         
+0882   44C0 2A A2 4E                ld hl, (pirateTopLeftPosition)    
+0883   44C3 11 A5 00                ld de, 165
+0884   44C6 19                      add hl, de
+0885   44C7 22 A4 4E                ld (pirateRowLeftPositionTemp), hl
+0886   44CA             
+0887   44CA C1             pop bc    
+0888   44CB 10 B1          djnz pirateRowDrawLoop
+0889   44CD                  
+0890   44CD 3A 4A 4E       ld a, (evenOddLoopFlag)
+0891   44D0 FE 01          cp 1
+0892   44D2 28 02          jr z, updatePirateSpriteCycle
+0893   44D4 18 27          jr endOfPirateSpriteUpdate
+0894   44D6                ; update the sprite to draw from the 3 cycles 
+0895   44D6             updatePirateSpriteCycle   
+0896   44D6                ; update X position and reverse direction if reached end limits
+0897   44D6 CD 3E 43       call updatePirateXPos
+0898   44D9                
+0899   44D9 3A A8 4E       ld a, (pirateSpriteCycleCount)
+0900   44DC 3C             inc a
+0901   44DD FE 02          cp 2
+0902   44DF 28 12          jr z, resetPirateSprite
+0903   44E1 32 A8 4E       ld (pirateSpriteCycleCount), a
+0904   44E4 2A A9 4E       ld hl, (pirateSpritesPointer)
+0905   44E7 11 20 00       ld de, 32
+0906   44EA 19             add hl, de
+0907   44EB 22 A9 4E       ld (pirateSpritesPointer), hl
+0908   44EE 3A A8 4E       ld a, (pirateSpriteCycleCount)     ;; currentPlayerLocation is already offset to
+0909   44F1~            #ifdef DEBUG_PRINT_PIRATE_CYCLE   
+0910   44F1~               ld de, 1
+0911   44F1~               call print_number8bits
+0912   44F1             #endif   
+0913   44F1 18 0A          jr endOfPirateSpriteUpdate
+0914   44F3                
+0915   44F3             resetPirateSprite   
+0916   44F3 AF             xor a
+0917   44F4 32 A8 4E       ld (pirateSpriteCycleCount), a
+0918   44F7                ;ld hl, pirate3sprites
+0919   44F7 21 6E 4D       ld hl, pirate3sprites4x4
+0920   44FA 22 A9 4E       ld (pirateSpritesPointer), hl 
+0921   44FD             
+0922   44FD             endOfPirateSpriteUpdate 
+0923   44FD C9             ret   
+0924   44FE                
+0925   44FE                
+0926   44FE             ;; check if missile hit pirates 
+0927   44FE             
+0928   44FE             
+0929   44FE             checkIfMissileHit       
+0930   44FE 2A A2 4E        ld hl, (pirateTopLeftPosition)
+0931   4501                 
+0932   4501 22 A4 4E        ld (pirateRowLeftPositionTemp), hl
+0933   4504                 ;becasue the whole loop is setup to count down, and because we want to check the 
+0934   4504                 ; lower row first we need to move the "Tope left position to be the bottom right
+0935   4504 11 B1 00        ld de, 177
+0936   4507 19              add hl, de
+0937   4508 22 A4 4E        ld (pirateRowLeftPositionTemp), hl  ; this now has bottom right pirate
+0938   450B                 
+0939   450B                 ; setup a moving bit mask which we'll use to determine if the pirate 
+0940   450B                 ; is shot or not. this is basically all ones except the top bit is zero, 
+0941   450B                 ; this will get rotated round in the loop and used to and with the pirateValidBitMap
+0942   450B 3E FE           ld a, $fe
+0943   450D 32 A6 4E        ld (pirateValidBitMapMaskTemp), a        
+0944   4510             
+0945   4510                 ; this is used to and with the current mask to check if missile collision check is needed
+0946   4510 3E 01           ld a, $01      
+0947   4512 32 A7 4E        ld (bitsetMaskPirateTemp), a  
+0948   4515 06 08           ld b, 8
+0949   4517             missileCheckHitLoop    
+0950   4517 C5              push bc
+0951   4518                     ;; check if we even need to check this pirate, if not valid then skip
+0952   4518 3A A7 4E            ld a, (bitsetMaskPirateTemp)        
+0953   451B 47                  ld b, a
+0954   451C 3A 46 4E            ld a, (pirateValidBitMap)
+0955   451F A0                  and b
+0956   4520 28 51               jr z, noHitMissile
+0957   4522                     
+0958   4522 ED 5B A4 4E         ld de, (pirateRowLeftPositionTemp)
+0959   4526 2A 6E 4E            ld hl, (currentMissilePosition)
+0960   4529                     
+0961   4529                     ; now compare upper and lower bytes of hl and de
+0962   4529 7C                  ld a, h
+0963   452A BA                  cp d
+0964   452B 28 02               jr z, checkNextPirateMissileHit
+0965   452D 18 44               jr noHitMissile 
+0966   452F             checkNextPirateMissileHit        
+0967   452F 7D                  ld a, l
+0968   4530 BB                  cp e
+0969   4531 28 02               jr z, MissileHitPirate 
+0970   4533 18 3E               jr noHitMissile 
+0971   4535             MissileHitPirate
+0972   4535                     ;; missile/cannon HIT!!!
+0973   4535                     
+0974   4535 3A A6 4E            ld a, (pirateValidBitMapMaskTemp)        
+0975   4538 47                  ld b, a
+0976   4539 3A 46 4E            ld a, (pirateValidBitMap)
+0977   453C A0                  and b
+0978   453D 32 46 4E            ld (pirateValidBitMap), a 
+0979   4540                     
+0980   4540                     ;also if we have hit then disable the missile now!!
+0981   4540 AF                  xor a
+0982   4541 32 6C 4E            ld (MissileInFlightFlag), a
+0983   4544 21 00 00            ld hl, 0
+0984   4547 22 6E 4E            ld (currentMissilePosition), hl
+0985   454A CD 81 47            call increaseScore
+0986   454D C1                  pop bc   ; have to do this becasue we're exiting early out of loop
+0987   454E                     
+0988   454E                     ;; let's draw an explosion and tombstone breifly 
+0989   454E 06 03               ld b, 3
+0990   4550 21 DE 4B            ld hl, explsion4x4
+0991   4553             explosionDrawLoop        
+0992   4553 C5                  push bc 
+0993   4554 E5                      push hl
+0994   4555 ED 5B A4 4E                 ld de, (pirateRowLeftPositionTemp)
+0995   4559 0E 04                       ld c, 4
+0996   455B 06 04                       ld b, 4                    
+0997   455D CD 35 47                    call drawSprite
+0998   4560 06 20                       ld b, 32
+0999   4562             explosionDelayLoop  
+1000   4562 C5                          push bc 
+1001   4563 06 40                       ld b, 64                 
+1002   4565             explosionDelayLoop2                
+1003   4565                                 
+1004   4565 10 FE                           djnz explosionDelayLoop2
+1005   4567                                 
+1006   4567 C1                          pop bc 
+1007   4568 10 F8                       djnz explosionDelayLoop
+1008   456A E1                      pop hl
+1009   456B 11 10 00                ld de, 16
+1010   456E 19                      add hl, de         
+1011   456F C1                  pop bc 
+1012   4570 10 E1               djnz explosionDrawLoop
+1013   4572                     
+1014   4572                     
+1015   4572 C9                  ret ;; exit early
+1016   4573             noHitMissile
+1017   4573                     ;; update mask which is the only bit not set we check next
+1018   4573                     ;; e.g second pirate is 0x10111111
+1019   4573 3A A6 4E            ld a, (pirateValidBitMapMaskTemp)
+1020   4576                     ;rra 
+1021   4576 CB 07               rlc a
+1022   4578 32 A6 4E            ld (pirateValidBitMapMaskTemp),a
+1023   457B                     
+1024   457B                     ;; update the mask which is the bit we're setting set all others z80
+1025   457B                     ;; e.g second pirate is 0x01000000
+1026   457B 3A A7 4E            ld a, (bitsetMaskPirateTemp)
+1027   457E                     ;rra 
+1028   457E CB 07               rlc a
+1029   4580 32 A7 4E            ld (bitsetMaskPirateTemp), a 
+1030   4583                     
+1031   4583                     ; now move the position to compare (ie a pirate) 
+1032   4583 11 FC FF            ld de, -4
+1033   4586 2A A4 4E            ld hl, (pirateRowLeftPositionTemp)
+1034   4589 19                  add hl, de
+1035   458A 22 A4 4E            ld (pirateRowLeftPositionTemp), hl
+1036   458D C1              pop bc     
+1037   458E 78                  ld a, b  ; check the loop counter, if it's 3 then move the whole lot down by +33-16
+1038   458F FE 05               cp 5
+1039   4591 20 07               jr nz, endLoopLabelPriateCheck
+1040   4593 11 6B FF            ld de, -149
+1041   4596                     
+1042   4596 19                  add hl, de
+1043   4597 22 A4 4E            ld (pirateRowLeftPositionTemp), hl
+1044   459A                     
+1045   459A             endLoopLabelPriateCheck
+1046   459A                     
+1047   459A                 ;djnz missileCheckHitLoop
+1048   459A 78              ld a, b
+1049   459B 3D              dec a
+1050   459C 47              ld b, a
+1051   459D FE 00           cp 0
+1052   459F C2 17 45        jp nz, missileCheckHitLoop
+1053   45A2 C9              ret
+1054   45A3                 
+1055   45A3                 
+1056   45A3             executeRestartLevel  
+1057   45A3 CD 2A 0A        call CLS
+1058   45A6                 ; draw top line where lives and score go
+1059   45A6 11 C3 4E        ld de, TopLineText
+1060   45A9 01 02 00        ld bc, 2
+1061   45AC CD AD 47        call printstring
+1062   45AF CD 5C 47        call printLivesAndScore
+1063   45B2                        
+1064   45B2                 ;; drew player death animation 
+1065   45B2 21 6E 4C        ld hl, playerHitSprite
+1066   45B5 22 9E 4E        ld (deadPlayerSpritePointer), hl 
+1067   45B8 06 05           ld b,5
+1068   45BA             playerDeathLoop
+1069   45BA C5              push bc
+1070   45BB ED 5B 6A 4E         ld de, (currentPlayerLocation)        
+1071   45BF 2A 9E 4E            ld hl, (deadPlayerSpritePointer)        
+1072   45C2 E5                  push hl
+1073   45C3 0E 08                   ld c, 8
+1074   45C5 06 04                   ld b, 4 
+1075   45C7 CD 35 47                call drawSprite
+1076   45CA E1                  pop hl 
+1077   45CB 11 20 00            ld de, 32
+1078   45CE 19                  add hl, de
+1079   45CF 22 9E 4E            ld (deadPlayerSpritePointer), hl
+1080   45D2                     
+1081   45D2 06 40               ld b, 64
+1082   45D4             playerDeathDelayLoop  
+1083   45D4 C5                  push bc 
+1084   45D5 06 FF               ld b, 255                
+1085   45D7             playerDeathDelayLoop2                            
+1086   45D7 10 FE                   djnz playerDeathDelayLoop2            
+1087   45D9 C1                  pop bc 
+1088   45DA 10 F8               djnz playerDeathDelayLoop
+1089   45DC C1              pop bc
+1090   45DD 10 DB           djnz playerDeathLoop
+1091   45DF             
+1092   45DF 06 FF               ld b, 255
+1093   45E1             playerDeathDelayLoop3  
+1094   45E1 C5                  push bc 
+1095   45E2 06 FF               ld b, 255                
+1096   45E4             playerDeathDelayLoop4                            
+1097   45E4 10 FE                   djnz playerDeathDelayLoop4
+1098   45E6 C1                  pop bc 
+1099   45E7 10 F8               djnz playerDeathDelayLoop3
+1100   45E9                     
+1101   45E9                     
+1102   45E9 CD 2A 0A        call CLS
+1103   45EC                 ; draw top line where lives and score go
+1104   45EC 11 C3 4E        ld de, TopLineText
+1105   45EF 01 02 00        ld bc, 2
+1106   45F2 CD AD 47        call printstring
+1107   45F5 CD 5C 47        call printLivesAndScore
+1108   45F8                 
+1109   45F8 3A AE 4E        ld a, (playerLives)
+1110   45FB 3D              dec a
+1111   45FC FE 00           cp 0
+1112   45FE 28 05           jr z, setGameOverFlag    
+1113   4600 32 AE 4E        ld (playerLives), a
+1114   4603 18 06           jr skipGameOverFlagSet
+1115   4605             setGameOverFlag    
+1116   4605 3E 01           ld a, 1
+1117   4607 32 BA 4E        ld (gameOverRestartFlag), a
+1118   460A C9              ret 
+1119   460B             skipGameOverFlagSet       
+1120   460B AF              xor a
+1121   460C 3A 6C 4E        ld a, (MissileInFlightFlag)
+1122   460F 32 4A 4E        ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
+1123   4612                 
+1124   4612 3A 6D 4E        ld a, (missileCountDown)
+1125   4615 3E 09           ld a, 9
+1126   4617 32 49 4E        ld (playerXPos), a
+1127   461A 21 2E 4B        ld hl, playerSpriteData
+1128   461D 22 A0 4E        ld (playerSpritePointer), hl 
+1129   4620 21 16 48        ld hl, Display+1 
+1130   4623 11 7D 02        ld de, PLAYER_START_POS
+1131   4626 19              add hl, de 
+1132   4627 22 6A 4E        ld (currentPlayerLocation), hl
+1133   462A                 
+1134   462A 21 01 00        ld hl, 1
+1135   462D 22 AB 4E        ld (pirateDirUpdate),hl
+1136   4630 3E 05           ld a, 5
+1137   4632 32 AD 4E        ld (pirateXPos),a
+1138   4635                 
+1139   4635                 
+1140   4635 21 16 48        ld hl, Display+1 
+1141   4638 11 24 00        ld de, 36
+1142   463B 19              add hl, de 
+1143   463C 22 A2 4E        ld (pirateTopLeftPosition), hl
+1144   463F AF              xor a
+1145   4640 32 A8 4E        ld (pirateSpriteCycleCount), a
+1146   4643                 ;ld hl, pirate3sprites
+1147   4643 21 6E 4D        ld hl, pirate3sprites4x4
+1148   4646 22 A9 4E        ld (pirateSpritesPointer), hl 
+1149   4649 21 01 00        ld hl, 1 
+1150   464C 22 AB 4E        ld (pirateDirUpdate), hl
+1151   464F 3E FF           ld a, $ff   ; every pirate is alive
+1152   4651                 ;ld a, $01   ; for test only bottom right pirate is alive
+1153   4651                 ;ld a, $80   ; for test only top left pirate is alive    
+1154   4651                 ;ld a, $55   ; for test every other pirate is alive
+1155   4651 32 46 4E        ld (pirateValidBitMap), a
+1156   4654                 
+1157   4654 AF              xor a
+1158   4655 32 72 4E        ld (restartLevelFlag), a
+1159   4658 32 9C 4E        ld (sharkValid), a
+1160   465B 32 9D 4E        ld (sharkBonusCountUp), a
+1161   465E C9              ret
+1162   465F             
+1163   465F             
+1164   465F             executeNextLevelStart
+1165   465F CD 2A 0A        call CLS
+1166   4662                 ; draw top line where lives and score go
+1167   4662 11 C3 4E        ld de, TopLineText
+1168   4665 01 02 00        ld bc, 2
+1169   4668 CD AD 47        call printstring
+1170   466B                 
+1171   466B 3A 71 4E        ld a, (gameLevel)
+1172   466E 3C              inc a 
+1173   466F 27              daa     ; convert to binary coded decimal to ease the display
+1174   4670 32 71 4E        ld (gameLevel), a
+1175   4673                 
+1176   4673 3A 70 4E        ld a, (levelCountDown)
+1177   4676 3D              dec a
+1178   4677 FE 01           cp 1
+1179   4679 CA 7F 46        jp z, skipStoreLevelCountDown
+1180   467C                 ;; could use this to start end end of level boss for now just hold at zero
+1181   467C 32 70 4E        ld (levelCountDown), a
+1182   467F             skipStoreLevelCountDown    
+1183   467F             
+1184   467F AF              xor a
+1185   4680 3A 6C 4E        ld a, (MissileInFlightFlag)
+1186   4683 32 4A 4E        ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
+1187   4686                 
+1188   4686 3A 6D 4E        ld a, (missileCountDown)
+1189   4689 3E 09           ld a, 9
+1190   468B 32 49 4E        ld (playerXPos), a
+1191   468E 21 2E 4B        ld hl, playerSpriteData
+1192   4691 22 A0 4E        ld (playerSpritePointer), hl 
+1193   4694 21 16 48        ld hl, Display+1 
+1194   4697 11 7D 02        ld de, PLAYER_START_POS
+1195   469A 19              add hl, de 
+1196   469B 22 6A 4E        ld (currentPlayerLocation), hl
+1197   469E                 
+1198   469E 21 01 00        ld hl, 1
+1199   46A1 22 AB 4E        ld (pirateDirUpdate),hl
+1200   46A4 3E 05           ld a, 5
+1201   46A6 32 AD 4E        ld (pirateXPos),a
+1202   46A9                 
+1203   46A9                 
+1204   46A9 21 16 48        ld hl, Display+1 
+1205   46AC 11 24 00        ld de, 36
+1206   46AF 19              add hl, de 
+1207   46B0 22 A2 4E        ld (pirateTopLeftPosition), hl
+1208   46B3 AF              xor a
+1209   46B4 32 A8 4E        ld (pirateSpriteCycleCount), a
+1210   46B7                 ;ld hl, pirate3sprites
+1211   46B7 21 6E 4D        ld hl, pirate3sprites4x4
+1212   46BA 22 A9 4E        ld (pirateSpritesPointer), hl 
+1213   46BD 21 01 00        ld hl, 1 
+1214   46C0 22 AB 4E        ld (pirateDirUpdate), hl
+1215   46C3 3E FF           ld a, $ff   ; every pirate is alive
+1216   46C5                 ;ld a, $01   ; for test only bottom right pirate is alive
+1217   46C5                 ;ld a, $80   ; for test only top left pirate is alive    
+1218   46C5                 ;ld a, $55   ; for test every other pirate is alive
+1219   46C5 32 46 4E        ld (pirateValidBitMap), a
+1220   46C8                 
+1221   46C8 AF              xor a
+1222   46C9 32 BB 4E        ld (goNextLevelFlag), a
+1223   46CC 32 9C 4E        ld (sharkValid), a
+1224   46CF 32 9D 4E        ld (sharkBonusCountUp), a    
+1225   46D2 C9              ret
+1226   46D3                 
+1227   46D3             checkForSharkHit
+1228   46D3 C9              ret
+1229   46D4                 
+1230   46D4             drawSharkBonus
+1231   46D4 AF              xor a
+1232   46D5 57              ld d, a
+1233   46D6 3A 9B 4E        ld a, (sharkPosX)
+1234   46D9 5F              ld e, a
+1235   46DA 21 16 48        ld hl, Display+1
+1236   46DD 19              add hl, de    
+1237   46DE 11 21 00        ld de, 33
+1238   46E1 19              add hl, de   
+1239   46E2 EB              ex de, hl    
+1240   46E3 21 9E 4D        ld hl, blankSprite
+1241   46E6 0E 08           ld c, 8
+1242   46E8 06 04           ld b, 4 
+1243   46EA CD 35 47        call drawSprite
+1244   46ED             
+1245   46ED             
+1246   46ED 3A 9B 4E        ld a, (sharkPosX)
+1247   46F0 3D              dec a
+1248   46F1 FE 01           cp 1
+1249   46F3 28 1E           jr z, noDrawSharkAndSetInvalid
+1250   46F5 32 9B 4E        ld (sharkPosX), a 
+1251   46F8             
+1252   46F8                 
+1253   46F8                 
+1254   46F8 AF              xor a
+1255   46F9 57              ld d, a
+1256   46FA 3A 9B 4E        ld a, (sharkPosX)
+1257   46FD 5F              ld e, a
+1258   46FE 21 16 48        ld hl, Display+1
+1259   4701 19              add hl, de    
+1260   4702 11 21 00        ld de, 33
+1261   4705 19              add hl, de    
+1262   4706 EB              ex de, hl
+1263   4707 21 7E 4B        ld hl, sharkBonusSprite
+1264   470A 0E 08           ld c, 8
+1265   470C 06 04           ld b, 4 
+1266   470E CD 35 47        call drawSprite
+1267   4711 18 21           jr endDrawSharkBonus
+1268   4713             noDrawSharkAndSetInvalid
+1269   4713 AF              xor a
+1270   4714 32 9C 4E        ld (sharkValid), a
+1271   4717 3E 01           ld a, 1
+1272   4719 32 9B 4E        ld (sharkPosX), a
+1273   471C AF              xor a
+1274   471D 57              ld d, a
+1275   471E 3A 9B 4E        ld a, (sharkPosX)
+1276   4721 5F              ld e, a
+1277   4722 21 16 48        ld hl, Display+1
+1278   4725 19              add hl, de    
+1279   4726 11 21 00        ld de, 33
+1280   4729 19              add hl, de    
+1281   472A 21 9E 4D        ld hl, blankSprite
+1282   472D 0E 08           ld c, 8
+1283   472F 06 04           ld b, 4 
+1284   4731 CD 35 47        call drawSprite
+1285   4734                 
+1286   4734                 
+1287   4734             endDrawSharkBonus   
+1288   4734 C9              ret
+1289   4735                 
+1290   4735             
+1291   4735             ;;;; sprite code
+1292   4735             ;;;; our sprites are custom 8 by 8 charactor blocks - so will look fairly big (maybe too big)
+1293   4735             ;;;; the generic routines will look at an area of memory stored in hl before the call
+1294   4735             
+1295   4735             ;;;; on the zx81 each block is 2 "pixels" horizontally and 2 vertically pre encoded in the sprite memory
+1296   4735             ;;;; size of sprite in memory using bit pack is 16 * 16 = 256bits ==>>> 32bytes
+1297   4735             
+1298   4735             
+1299   4735             ;;; hl = start of sprite memory
+1300   4735             ;;; de = offset position in screen memory top left of sprite - no limit check done (yet)
+1301   4735             ;;; c  = width of sprite (normally 8 to keep things "simple")
+1302   4735             ;;; b  = rows in sprite (normally 8 to keep things "simple")
+1303   4735             drawSprite         
+1304   4735 C5              push bc    
+1305   4736 D5              push de
+1306   4737 06 00           ld b, 0               ;; just doing columns in c so zero b
+1307   4739 ED B0           ldir                  ;; ldir repeats ld (de), (hl) until bc = 0 and increments hl and de
+1308   473B D1              pop de
+1309   473C EB              ex de, hl    
+1310   473D 01 21 00        ld bc, 33             ;; move next write position to next row
+1311   4740 09              add hl, bc
+1312   4741 EB              ex de, hl
+1313   4742 C1              pop bc
+1314   4743 10 F0           djnz drawSprite    
+1315   4745 C9              ret
+1316   4746             
+1317   4746             
+1318   4746             ;;; work in progrerss currently crashes - 
+1319   4746             ;; if this could be made to work then the platforms would appear in blank bits of sprite
+1320   4746             ;; which would made game play better
+1321   4746             drawSprite_OR_BACKGROUND         
+1322   4746 C5              push bc    
+1323   4747 D5              push de
+1324   4748                 
+1325   4748 41              ld b, c    ; get column loop counter in b 
+1326   4749             drawSprite_OR_ColLoop
+1327   4749 7E              ld a, (hl)
+1328   474A 23              inc hl
+1329   474B B2              or d
+1330   474C B3              or e
+1331   474D 12              ld (de), a
+1332   474E 13              inc de
+1333   474F 10 F8           djnz drawSprite_OR_ColLoop
+1334   4751             
+1335   4751 D1              pop de
+1336   4752 EB              ex de, hl    
+1337   4753 01 21 00        ld bc, 33             ;; move next write position to next row
+1338   4756 09              add hl, bc
+1339   4757 EB              ex de, hl
+1340   4758 C1              pop bc
+1341   4759 10 EB           djnz drawSprite_OR_BACKGROUND    
+1342   475B C9              ret  
+1343   475C                 
+1344   475C             printLivesAndScore
+1345   475C 3A AE 4E        ld a, (playerLives)
+1346   475F 11 1D 00        ld de, 29    
+1347   4762 CD CA 47        call print_number8bits        
+1348   4765                 
+1349   4765 01 0B 00        ld bc, 11
+1350   4768 11 AF 4E        ld de, score_mem_tens
+1351   476B CD E0 47        call printNumber
+1352   476E             
+1353   476E 01 09 00        ld bc, 9
+1354   4771 11 B0 4E        ld de, score_mem_hund
+1355   4774 CD E0 47        call printNumber     
+1356   4777                    
+1357   4777 3A 71 4E        ld a, (gameLevel)
+1358   477A 11 14 00        ld de, 20
+1359   477D CD CA 47        call print_number8bits   
+1360   4780                 
+1361   4780 C9              ret
+1362   4781             
+1363   4781             increaseScore    
+1364   4781 3A AF 4E        ld a,(score_mem_tens)				; add one to score, scoring is binary coded decimal (BCD)
+1365   4784 C6 01       	add a,1	
+1366   4786 27          	daa									; z80 daa instruction realigns for BCD after add or subtract
+1367   4787 32 AF 4E    	ld (score_mem_tens),a	
+1368   478A FE 99       	cp 153
+1369   478C 28 02       	jr z, addOneToHund
+1370   478E 18 0E       	jr skipAddHund
+1371   4790             addOneToHund
+1372   4790 3E 00       	ld a, 0
+1373   4792 32 AF 4E    	ld (score_mem_tens), a
+1374   4795 3A B0 4E        ld a, (score_mem_hund)
+1375   4798 C6 01       	add a, 1
+1376   479A 27          	daa                                   ; z80 daa instruction realigns for BCD after add or subtract
+1377   479B 32 B0 4E    	ld (score_mem_hund), a
+1378   479E             skipAddHund	
+1379   479E             
+1380   479E C9              ret    
+1381   479F             
+1382   479F             setRandomPirateToShoot
+1383   479F             tryAnotherRCol                          ; generate random number between 0 and 3 inclusive
+1384   479F ED 5F           ld a, r                             
+1385   47A1 E6 03           and %00000011
+1386   47A3 FE 04           cp 4    
+1387   47A5 D2 9F 47        jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 4 again    
+1388   47A8 3C              inc a                               ; inc guarntees range 1 to 30 for col
+1389   47A9 32 47 4E        ld (nextPirateToFireIndex), a    
+1390   47AC C9              ret
+1391   47AD             
+1392   47AD                   
+1393   47AD             ; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
+1394   47AD             printstring
+1395   47AD D5              push de ; preserve de
+1396   47AE 21 15 48        ld hl,Display
+1397   47B1 09              add hl,bc	
+1398   47B2             printstring_loop
+1399   47B2 1A              ld a,(de)
+1400   47B3 FE FF           cp $ff
+1401   47B5 CA BD 47        jp z,printstring_end
+1402   47B8 77              ld (hl),a
+1403   47B9 23              inc hl
+1404   47BA 13              inc de
+1405   47BB 18 F5           jr printstring_loop
+1406   47BD             printstring_end	
+1407   47BD D1              pop de  ; preserve de
+1408   47BE C9              ret  
+1409   47BF                 
+1410   47BF             print_number16bits    ; bc stores the 16bits, print b then c, de stores offset from Display
+1411   47BF 78              ld a, b
+1412   47C0 CD CA 47        call print_number8bits
+1413   47C3 79              ld a, c
+1414   47C4 13              inc de  ; move de over by 2
+1415   47C5 13              inc de
+1416   47C6 CD CA 47        call print_number8bits
+1417   47C9 C9              ret
+1418   47CA             
+1419   47CA                 
+1420   47CA             print_number8bits
+1421   47CA 2A 0E 40        ld hl, (DF_CC)    
+1422   47CD 19              add hl, de    
+1423   47CE F5              push af ;store the original value of a for later
+1424   47CF E6 F0           and $f0 ; isolate the first digit
+1425   47D1 1F              rra
+1426   47D2 1F              rra
+1427   47D3 1F              rra
+1428   47D4 1F              rra
+1429   47D5 C6 1C           add a,$1c ; add 28 to the character code
+1430   47D7 77              ld (hl), a
+1431   47D8 23              inc hl
+1432   47D9 F1              pop af ; retrieve original value of a
+1433   47DA E6 0F           and $0f ; isolate the second digit
+1434   47DC C6 1C           add a,$1c ; add 28 to the character code
+1435   47DE 77              ld (hl), a  
+1436   47DF                 
+1437   47DF C9              ret
+1438   47E0             
+1439   47E0             printNumber
+1440   47E0 21 15 48        ld hl,Display
+1441   47E3 09              add hl,bc	
+1442   47E4             printNumber_loop
+1443   47E4 1A              ld a,(de)
+1444   47E5 F5              push af ;store the original value of a for later
+1445   47E6 E6 F0           and $f0 ; isolate the first digit
+1446   47E8 1F              rra
+1447   47E9 1F              rra
+1448   47EA 1F              rra
+1449   47EB 1F              rra
+1450   47EC C6 1C           add a,$1c ; add 28 to the character code
+1451   47EE 77              ld (hl), a
+1452   47EF 23              inc hl
+1453   47F0 F1              pop af ; retrieve original value of a
+1454   47F1 E6 0F           and $0f ; isolate the second digit
+1455   47F3 C6 1C           add a,$1c ; add 28 to the character code
+1456   47F5 77              ld (hl), a      
+1457   47F6 C9              ret  
+1458   47F7                 
+1459   47F7             
+1460   47F7             ;check if TV synchro (FRAMES) happend
+1461   47F7             vsync	
+1462   47F7 3A 34 40    	ld a,(FRAMES)
+1463   47FA 4F          	ld c,a
+1464   47FB             sync
+1465   47FB 3A 34 40    	ld a,(FRAMES)
+1466   47FE B9          	cp c
+1467   47FF 28 FA       	jr z,sync   
+1468   4801             endOfVsync        
+1469   4801 C9          	ret
+1470   4802             
+1471   4802                 
+1472   4802 76                          DEFB $76                        ; Newline        
+1473   4803             Line1End
+1474   4803 00 14       Line2			DEFB $00,$14
+1475   4805 0E 00                       DEFW Line2End-Line2Text
+1476   4807 F9 D4       Line2Text     	DEFB $F9,$D4                    ; RAND USR
+1477   4809 1D 22 21 1D 				DEFB $1D,$22,$21,$1D,$20        ; 16514                
+1477   480D 20 
+1478   480E 7E                          DEFB $7E                        ; Number
+1479   480F 8F 01 04 00                 DEFB $8F,$01,$04,$00,$00        ; Numeric encoding
+1479   4813 00 
+1480   4814 76                          DEFB $76                        ; Newline
+1481   4815             Line2End            
+1482   4815             endBasic
+1483   4815                                                                             
+1484   4815 76          Display        	DEFB $76                                                 				
+1485   4816 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76                     
+1485   481A 00 00 00 00 
+1485   481E 00 00 00 00 
+1485   4822 00 00 00 00 
+1485   4826 00 00 00 00 
+1485   482A 00 00 00 00 
+1485   482E 00 00 00 00 
+1485   4832 00 00 00 00 
+1485   4836 76 
+1486   4837 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1486   483B 00 00 00 00 
+1486   483F 00 00 00 00 
+1486   4843 00 00 00 00 
+1486   4847 00 00 00 00 
+1486   484B 00 00 00 00 
+1486   484F 00 00 00 00 
+1486   4853 00 00 00 00 
+1486   4857 76 
+1487   4858 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1487   485C 00 00 00 00 
+1487   4860 00 00 00 00 
+1487   4864 00 00 00 00 
+1487   4868 00 00 00 00 
+1487   486C 00 00 00 00 
+1487   4870 00 00 00 00 
+1487   4874 00 00 00 00 
+1487   4878 76 
+1488   4879 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1488   487D 00 00 00 00 
+1488   4881 00 00 00 00 
+1488   4885 00 00 00 00 
+1488   4889 00 00 00 00 
+1488   488D 00 00 00 00 
+1488   4891 00 00 00 00 
+1488   4895 00 00 00 00 
+1488   4899 76 
+1489   489A 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1489   489E 00 00 00 00 
+1489   48A2 00 00 00 00 
+1489   48A6 00 00 00 00 
+1489   48AA 00 00 00 00 
+1489   48AE 00 00 00 00 
+1489   48B2 00 00 00 00 
+1489   48B6 00 00 00 00 
+1489   48BA 76 
+1490   48BB 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1490   48BF 00 00 00 00 
+1490   48C3 00 00 00 00 
+1490   48C7 00 00 00 00 
+1490   48CB 00 00 00 00 
+1490   48CF 00 00 00 00 
+1490   48D3 00 00 00 00 
+1490   48D7 00 00 00 00 
+1490   48DB 76 
+1491   48DC 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1491   48E0 00 00 00 00 
+1491   48E4 00 00 00 00 
+1491   48E8 00 00 00 00 
+1491   48EC 00 00 00 00 
+1491   48F0 00 00 00 00 
+1491   48F4 00 00 00 00 
+1491   48F8 00 00 00 00 
+1491   48FC 76 
+1492   48FD 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1492   4901 00 00 00 00 
+1492   4905 00 00 00 00 
+1492   4909 00 00 00 00 
+1492   490D 00 00 00 00 
+1492   4911 00 00 00 00 
+1492   4915 00 00 00 00 
+1492   4919 00 00 00 00 
+1492   491D 76 
+1493   491E 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1493   4922 00 00 00 00 
+1493   4926 00 00 00 00 
+1493   492A 00 00 00 00 
+1493   492E 00 00 00 00 
+1493   4932 00 00 00 00 
+1493   4936 00 00 00 00 
+1493   493A 00 00 00 00 
+1493   493E 76 
+1494   493F 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1494   4943 00 00 00 00 
+1494   4947 00 00 00 00 
+1494   494B 00 00 00 00 
+1494   494F 00 00 00 00 
+1494   4953 00 00 00 00 
+1494   4957 00 00 00 00 
+1494   495B 00 00 00 00 
+1494   495F 76 
+1495   4960 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1495   4964 00 00 00 00 
+1495   4968 00 00 00 00 
+1495   496C 00 00 00 00 
+1495   4970 00 00 00 00 
+1495   4974 00 00 00 00 
+1495   4978 00 00 00 00 
+1495   497C 00 00 00 00 
+1495   4980 76 
+1496   4981 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1496   4985 00 00 00 00 
+1496   4989 00 00 00 00 
+1496   498D 00 00 00 00 
+1496   4991 00 00 00 00 
+1496   4995 00 00 00 00 
+1496   4999 00 00 00 00 
+1496   499D 00 00 00 00 
+1496   49A1 76 
+1497   49A2 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1497   49A6 00 00 00 00 
+1497   49AA 00 00 00 00 
+1497   49AE 00 00 00 00 
+1497   49B2 00 00 00 00 
+1497   49B6 00 00 00 00 
+1497   49BA 00 00 00 00 
+1497   49BE 00 00 00 00 
+1497   49C2 76 
+1498   49C3 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1498   49C7 00 00 00 00 
+1498   49CB 00 00 00 00 
+1498   49CF 00 00 00 00 
+1498   49D3 00 00 00 00 
+1498   49D7 00 00 00 00 
+1498   49DB 00 00 00 00 
+1498   49DF 00 00 00 00 
+1498   49E3 76 
+1499   49E4 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1499   49E8 00 00 00 00 
+1499   49EC 00 00 00 00 
+1499   49F0 00 00 00 00 
+1499   49F4 00 00 00 00 
+1499   49F8 00 00 00 00 
+1499   49FC 00 00 00 00 
+1499   4A00 00 00 00 00 
+1499   4A04 76 
+1500   4A05 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1500   4A09 00 00 00 00 
+1500   4A0D 00 00 00 00 
+1500   4A11 00 00 00 00 
+1500   4A15 00 00 00 00 
+1500   4A19 00 00 00 00 
+1500   4A1D 00 00 00 00 
+1500   4A21 00 00 00 00 
+1500   4A25 76 
+1501   4A26 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1501   4A2A 00 00 00 00 
+1501   4A2E 00 00 00 00 
+1501   4A32 00 00 00 00 
+1501   4A36 00 00 00 00 
+1501   4A3A 00 00 00 00 
+1501   4A3E 00 00 00 00 
+1501   4A42 00 00 00 00 
+1501   4A46 76 
+1502   4A47 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1502   4A4B 00 00 00 00 
+1502   4A4F 00 00 00 00 
+1502   4A53 00 00 00 00 
+1502   4A57 00 00 00 00 
+1502   4A5B 00 00 00 00 
+1502   4A5F 00 00 00 00 
+1502   4A63 00 00 00 00 
+1502   4A67 76 
+1503   4A68 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1503   4A6C 00 00 00 00 
+1503   4A70 00 00 00 00 
+1503   4A74 00 00 00 00 
+1503   4A78 00 00 00 00 
+1503   4A7C 00 00 00 00 
+1503   4A80 00 00 00 00 
+1503   4A84 00 00 00 00 
+1503   4A88 76 
+1504   4A89 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1504   4A8D 00 00 00 00 
+1504   4A91 00 00 00 00 
+1504   4A95 00 00 00 00 
+1504   4A99 00 00 00 00 
+1504   4A9D 00 00 00 00 
+1504   4AA1 00 00 00 00 
+1504   4AA5 00 00 00 00 
+1504   4AA9 76 
+1505   4AAA 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1505   4AAE 00 00 00 00 
+1505   4AB2 00 00 00 00 
+1505   4AB6 00 00 00 00 
+1505   4ABA 00 00 00 00 
+1505   4ABE 00 00 00 00 
+1505   4AC2 00 00 00 00 
+1505   4AC6 00 00 00 00 
+1505   4ACA 76 
+1506   4ACB 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1506   4ACF 00 00 00 00 
+1506   4AD3 00 00 00 00 
+1506   4AD7 00 00 00 00 
+1506   4ADB 00 00 00 00 
+1506   4ADF 00 00 00 00 
+1506   4AE3 00 00 00 00 
+1506   4AE7 00 00 00 00 
+1506   4AEB 76 
+1507   4AEC 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1507   4AF0 00 00 00 00 
+1507   4AF4 00 00 00 00 
+1507   4AF8 00 00 00 00 
+1507   4AFC 00 00 00 00 
+1507   4B00 00 00 00 00 
+1507   4B04 00 00 00 00 
+1507   4B08 00 00 00 00 
+1507   4B0C 76 
+1508   4B0D 00 00 00 00                 DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+1508   4B11 00 00 00 00 
+1508   4B15 00 00 00 00 
+1508   4B19 00 00 00 00 
+1508   4B1D 00 00 00 00 
+1508   4B21 00 00 00 00 
+1508   4B25 00 00 00 00 
+1508   4B29 00 00 00 00 
+1508   4B2D 76 
+1509   4B2E             
+1510   4B2E             Variables: 
+1511   4B2E             
+1512   4B2E             playerSpriteData
+1513   4B2E                  ; DEFB   $00, $00, $00, $85, $05, $00, $00, $00, $00, $00, $00, $81, commented out but nice space fighhter ship
+1514   4B2E                  ; DEFB	$82, $00, $00, $00, $00, $00, $00, $05, $85, $00, $00, $00,
+1515   4B2E                  ; DEFB	$00, $00, $85, $80, $80, $05, $00, $00, $05, $87, $80, $80,
+1516   4B2E                  ; DEFB	$80, $80, $04, $85, $82, $80, $80, $82, $81, $80, $80, $81,
+1517   4B2E                  ; DEFB	$07, $03, $84, $82, $81, $07, $03, $84, $00, $00, $00, $84,
+1518   4B2E                  ; DEFB	$07, $00, $00, $00     
+1519   4B2E                 ; the next one is the old 8x8 big sail ship
+1520   4B2E                 ; DEFB	$00, $00, $00, $00, $81, $04, $00, $00, $00, $00, $00, $06,
+1521   4B2E                 ; DEFB	$85, $00, $00, $00, $00, $00, $06, $87, $80, $82, $00, $00,
+1522   4B2E                 ; DEFB	$00, $06, $87, $80, $80, $80, $82, $00, $06, $00, $03, $03,
+1523   4B2E                 ; DEFB	$84, $00, $87, $83, $03, $82, $07, $03, $03, $03, $84, $80,
+1524   4B2E                 ; DEFB	$00, $02, $04, $01, $01, $01, $86, $01, $00, $00, $02, $80,
+1525   4B2E                 ; DEFB	$80, $80, $01, $00   
+1526   4B2E                 ; this is now 8 by 4
+1527   4B2E 00 00 81 00      DEFB $00, $00, $81, $00, $00, $81, $04, $00, $00, $06, $85, $00,
+1527   4B32 00 81 04 00 
+1527   4B36 00 06 85 00 
+1528   4B3A 00 85 00 00      DEFB $00, $85, $00, $00, $81, $83, $81, $83, $82, $81, $81, $80,
+1528   4B3E 81 83 81 83 
+1528   4B42 82 81 81 80 
+1529   4B46 00 02 81 81      DEFB $00, $02, $81, $81, $81, $81, $82, $01, $00, $00, $00, $00,
+1529   4B4A 81 81 82 01 
+1529   4B4E 00 00 00 00 
+1530   4B52 00 00 00 00      DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+1530   4B56 00 00 00 00 
+1530   4B5A 00 00 00 00 
+1531   4B5E 00 00 00 00      DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+1531   4B62 00 00 00 00 
+1531   4B66 00 00 00 00 
+1532   4B6A 00 00 00 00 	 DEFB $00, $00, $00, $00
+1533   4B6E                 
+1534   4B6E             missileData    
+1535   4B6E                 ;; small cannon ball 
+1536   4B6E 00 00 00 00     DEFB $00, $00, $00, $00, $00, $81, $86, $00, $00, $84, $07, $00,
+1536   4B72 00 81 86 00 
+1536   4B76 00 84 07 00 
+1537   4B7A 00 00 00 00 	DEFB $00, $00, $00, $00
+1538   4B7E                  ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+1539   4B7E                  ;DEFB	$00, $00, $00, $00, $00, $00, $00, $87, $04, $00, $00, $00,
+1540   4B7E                  ;DEFB	$00, $00, $00, $02, $01, $00, $00, $00, $00, $00, $00, $00,
+1541   4B7E                  ;DEFB	$00, $00, $00, $00, $00, $00, $00, $85, $05, $00, $00, $00,
+1542   4B7E                  ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+1543   4B7E                  ;DEFB	$00, $00, $00, $00     
+1544   4B7E             	
+1545   4B7E             	;DEFB $00, $87, $04, $00, $00, $02, $01, $00, $00, $00, $00, $00,
+1546   4B7E             	;DEFB $00, $85, $05, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+1547   4B7E             	;DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+1548   4B7E             	;DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
+1549   4B7E                 
+1550   4B7E                 ;; big cannon ball
+1551   4B7E                 ;DEFB $00, $81, $86, $00, $81, $80, $82, $86, $84, $80, $07, $06,
+1552   4B7E             	;DEFB $00, $84, $06, $00
+1553   4B7E             sharkBonusSprite    ; 96 bytes , 8x4 characters times 3 frames    
+1554   4B7E 00 00 87 80 	DEFB $00, $00, $87, $80, $00, $00, $00, $87, $83, $07, $80, $80,
+1554   4B82 00 00 00 87 
+1554   4B86 83 07 80 80 
+1555   4B8A 80 83 83 01 	DEFB $80, $83, $83, $01, $80, $80, $80, $80, $80, $80, $03, $04,
+1555   4B8E 80 80 80 80 
+1555   4B92 80 80 03 04 
+1556   4B96 00 03 00 02 	DEFB $00, $03, $00, $02, $04, $00, $00, $02, $00, $00, $87, $80,
+1556   4B9A 04 00 00 02 
+1556   4B9E 00 00 87 80 
+1557   4BA2 00 00 00 87 	DEFB $00, $00, $00, $87, $83, $07, $80, $80, $80, $83, $83, $07,
+1557   4BA6 83 07 80 80 
+1557   4BAA 80 83 83 07 
+1558   4BAE 02 80 80 80 	DEFB $02, $80, $80, $80, $80, $80, $03, $82, $03, $03, $00, $84,
+1558   4BB2 80 80 03 82 
+1558   4BB6 03 03 00 84 
+1559   4BBA 00 00 00 02 	DEFB $00, $00, $00, $02, $00, $00, $87, $80, $00, $00, $00, $83,
+1559   4BBE 00 00 87 80 
+1559   4BC2 00 00 00 83 
+1560   4BC6 83 80 80 80 	DEFB $83, $80, $80, $80, $80, $83, $83, $05, $81, $80, $80, $80,
+1560   4BCA 80 83 83 05 
+1560   4BCE 81 80 80 80 
+1561   4BD2 80 80 03 05 	DEFB $80, $80, $03, $05, $00, $03, $00, $86, $00, $00, $00, $03    
+1561   4BD6 00 03 00 86 
+1561   4BDA 00 00 00 03 
+1562   4BDE                 
+1563   4BDE                  
+1564   4BDE             explsion4x4     ;4x4 and 5 frames total of animation (80bytes)
+1565   4BDE 87 87 01 04 	DEFB $87, $87, $01, $04, $04, $04, $87, $87, $00, $06, $86, $00,
+1565   4BE2 04 04 87 87 
+1565   4BE6 00 06 86 00 
+1566   4BEA 87 05 02 00 	DEFB $87, $05, $02, $00, $01, $00, $02, $02, $04, $04, $00, $86,
+1566   4BEE 01 00 02 02 
+1566   4BF2 04 04 00 86 
+1567   4BF6 87 00 87 00 	DEFB $87, $00, $87, $00, $87, $01, $00, $01, $00, $85, $05, $00,
+1567   4BFA 87 01 00 01 
+1567   4BFE 00 85 05 00 
+1568   4C02 85 80 80 05 	DEFB $85, $80, $80, $05, $00, $85, $05, $00, $00, $85, $05, $00,
+1568   4C06 00 85 05 00 
+1568   4C0A 00 85 05 00 
+1569   4C0E 00 85 05 00 	DEFB $00, $85, $05, $00, $85, $80, $80, $05, $00, $85, $05, $00,
+1569   4C12 85 80 80 05 
+1569   4C16 00 85 05 00 
+1570   4C1A 00 85 05 00 	DEFB $00, $85, $05, $00, $00, $85, $05, $00, $85, $80, $80, $05,
+1570   4C1E 00 85 05 00 
+1570   4C22 85 80 80 05 
+1571   4C26 00 85 05 00 	DEFB $00, $85, $05, $00, $00, $85, $05, $00
+1571   4C2A 00 85 05 00 
+1572   4C2E             jollyRoger     
+1573   4C2E 87 03 00 00      DEFB	$87, $03, $00, $00, $00, $00, $03, $04, $05, $86, $00, $83,
+1573   4C32 00 00 03 04 
+1573   4C36 05 86 00 83 
+1574   4C3A 83 00 06 85      DEFB	$83, $00, $06, $85, $00, $00, $06, $04, $87, $86, $00, $00,
+1574   4C3E 00 00 06 04 
+1574   4C42 87 86 00 00 
+1575   4C46 00 00 05 87      DEFB	$00, $00, $05, $87, $04, $85, $00, $00, $00, $00, $02, $83,
+1575   4C4A 04 85 00 00 
+1575   4C4E 00 00 02 83 
+1576   4C52 83 01 00 00      DEFB	$83, $01, $00, $00, $00, $00, $04, $07, $84, $87, $00, $00,
+1576   4C56 00 00 04 07 
+1576   4C5A 84 87 00 00 
+1577   4C5E 05 06 00 01      DEFB	$05, $06, $00, $01, $02, $00, $86, $85, $02, $83, $00, $00,
+1577   4C62 02 00 86 85 
+1577   4C66 02 83 00 00 
+1578   4C6A 00 00 83 01      DEFB	$00, $00, $83, $01     
+1579   4C6E                  
+1580   4C6E             playerHitSprite        ; 16x8 "pixels" 8x4 characters (bytes) times 4 frames animation
+1581   4C6E 04 04 83 02     DEFB $04, $04, $83, $02, $87, $02, $00, $02, $04, $00, $87, $00,
+1581   4C72 87 02 00 02 
+1581   4C76 04 00 87 00 
+1582   4C7A 00 01 02 00     DEFB $00, $01, $02, $00, $87, $87, $02, $87, $05, $06, $81, $86,
+1582   4C7E 87 87 02 87 
+1582   4C82 05 06 81 86 
+1583   4C86 00 02 81 81     DEFB $00, $02, $81, $81, $81, $81, $82, $01, $01, $01, $04, $02,
+1583   4C8A 81 81 82 01 
+1583   4C8E 01 01 04 02 
+1584   4C92 00 00 00 87     DEFB $00, $00, $00, $87, $04, $87, $00, $00, $00, $01, $87, $00,
+1584   4C96 04 87 00 00 
+1584   4C9A 00 01 87 00 
+1585   4C9E 87 87 00 00     DEFB $87, $87, $00, $00, $00, $00, $00, $00, $00, $00, $06, $00,
+1585   4CA2 00 00 00 00 
+1585   4CA6 00 00 06 00 
+1586   4CAA 00 01 00 87     DEFB $00, $01, $00, $87, $00, $01, $00, $01, $00, $87, $00, $87,
+1586   4CAE 00 01 00 01 
+1586   4CB2 00 87 00 87 
+1587   4CB6 00 00 00 00     DEFB $00, $00, $00, $00, $00, $00, $00, $00, $04, $00, $00, $00,
+1587   4CBA 00 00 00 00 
+1587   4CBE 04 00 00 00 
+1588   4CC2 00 00 00 02     DEFB $00, $00, $00, $02, $00, $00, $00, $00, $00, $00, $00, $00,
+1588   4CC6 00 00 00 00 
+1588   4CCA 00 00 00 00 
+1589   4CCE 07 84 85 03     DEFB $07, $84, $85, $03, $04, $07, $86, $85, $05, $85, $85, $00,
+1589   4CD2 04 07 86 85 
+1589   4CD6 05 85 85 00 
+1590   4CDA 05 05 85 85     DEFB $05, $05, $85, $85, $07, $84, $85, $03, $04, $07, $86, $02,
+1590   4CDE 07 84 85 03 
+1590   4CE2 04 07 86 02 
+1591   4CE6 01 02 02 00     DEFB $01, $02, $02, $00, $01, $01, $02, $02, $00, $80, $00, $00,
+1591   4CEA 01 01 02 02 
+1591   4CEE 00 80 00 00 
+1592   4CF2 00 85 05 00     DEFB $00, $85, $05, $00, $00, $00, $85, $84, $84, $00, $00, $00,
+1592   4CF6 00 00 85 84 
+1592   4CFA 84 00 00 00 
+1593   4CFE 00 00 06 82     DEFB $00, $00, $06, $82, $07, $04, $00, $00, $00, $80, $00, $01,
+1593   4D02 07 04 00 00 
+1593   4D06 00 80 00 01 
+1594   4D0A 01 85 05 00 	DEFB $01, $85, $05, $00
+1595   4D0E               
+1596   4D0E             pirate3sprites     ;; these are 4 by 8 bytes and is 3 in the animation = 96bytes
+1597   4D0E 00 84 07 85     DEFB $00, $84, $07, $85, $87, $81, $82, $06, $05, $80, $80, $00,
+1597   4D12 87 81 82 06 
+1597   4D16 05 80 80 00 
+1598   4D1A 01 07 84 00     DEFB $01, $07, $84, $00, $87, $05, $85, $00, $00, $00, $02, $00,
+1598   4D1E 87 05 85 00 
+1598   4D22 00 00 02 00 
+1599   4D26 00 00 00 00     DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $84, $07, $00,
+1599   4D2A 00 00 00 00 
+1599   4D2E 00 84 07 00 
+1600   4D32 87 81 82 04     DEFB $87, $81, $82, $04, $05, $80, $80, $85, $01, $07, $84, $02,
+1600   4D36 05 80 80 85 
+1600   4D3A 01 07 84 02 
+1601   4D3E 00 05 85 00     DEFB $00, $05, $85, $00, $02, $01, $02, $00, $00, $00, $00, $00,
+1601   4D42 02 01 02 00 
+1601   4D46 00 00 00 00 
+1602   4D4A 00 00 00 00     DEFB $00, $00, $00, $00, $05, $84, $07, $00, $86, $81, $82, $04,
+1602   4D4E 05 84 07 00 
+1602   4D52 86 81 82 04 
+1603   4D56 00 80 80 85 	DEFB $00, $80, $80, $85, $00, $07, $84, $02, $00, $05, $85, $00,
+1603   4D5A 00 07 84 02 
+1603   4D5E 00 05 85 00 
+1604   4D62 02 01 02 00 	DEFB $02, $01, $02, $00, $00, $00, $00, $00, $00, $00, $00, $00
+1604   4D66 00 00 00 00 
+1604   4D6A 00 00 00 00 
+1605   4D6E             pirate3sprites4x4       ; these are 16 bytes each 4 by 4)
+1606   4D6E 05 85 05 00 	DEFB $05, $85, $05, $00, $02, $80, $80, $86, $00, $07, $84, $02,
+1606   4D72 02 80 80 86 
+1606   4D76 00 07 84 02 
+1607   4D7A 87 05 85 00 	DEFB $87, $05, $85, $00, $04, $85, $05, $00, $02, $80, $80, $84,
+1607   4D7E 04 85 05 00 
+1607   4D82 02 80 80 84 
+1608   4D86 00 07 84 00 	DEFB $00, $07, $84, $00, $02, $01, $85, $00, $00, $85, $05, $87,
+1608   4D8A 02 01 85 00 
+1608   4D8E 00 85 05 87 
+1609   4D92 06 80 80 01 	DEFB $06, $80, $80, $01, $01, $07, $84, $00, $87, $05, $85, $00
+1609   4D96 01 07 84 00 
+1609   4D9A 87 05 85 00 
+1610   4D9E                 
+1611   4D9E             ; used to clear current location before move    
+1612   4D9E             blankSprite
+1613   4D9E 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+1613   4DA2 00 00 00 00 
+1614   4DA6 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+1614   4DAA 00 00 00 00 
+1615   4DAE 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+1615   4DB2 00 00 00 00 
+1616   4DB6 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+1616   4DBA 00 00 00 00 
+1617   4DBE 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+1617   4DC2 00 00 00 00 
+1618   4DC6 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+1618   4DCA 00 00 00 00 
+1619   4DCE 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+1619   4DD2 00 00 00 00 
+1620   4DD6 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0    
+1620   4DDA 00 00 00 00 
+1621   4DDE 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0
+1621   4DE2 00 00 00 00 
+1622   4DE6 00 00 00 00     DEFB   0,  0,  0,  0,  0,  0,  0,  0      
+1622   4DEA 00 00 00 00 
+1623   4DEE 08 08 00 00     DEFB   8,  8,  0,  0,  0,  0,  0,  0      
+1623   4DF2 00 00 00 00 
+1624   4DF6             blockFilled    ;8*10
+1625   4DF6 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+1625   4DFA 08 08 08 08 
+1626   4DFE 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+1626   4E02 08 08 08 08 
+1627   4E06 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+1627   4E0A 08 08 08 08 
+1628   4E0E 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+1628   4E12 08 08 08 08 
+1629   4E16 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+1629   4E1A 08 08 08 08 
+1630   4E1E 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+1630   4E22 08 08 08 08 
+1631   4E26 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+1631   4E2A 08 08 08 08 
+1632   4E2E 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8
+1632   4E32 08 08 08 08 
+1633   4E36 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8     
+1633   4E3A 08 08 08 08 
+1634   4E3E 08 08 08 08     DEFB   8,  8,  8,  8,  8,  8,  8,  8    
+1634   4E42 08 08 08 08 
+1635   4E46             
+1636   4E46             pirateValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
+1637   4E46 00              DEFB 0    
+1638   4E47             nextPirateToFireIndex
+1639   4E47 00              DEFB 0
+1640   4E48             pirateFiringFlag    
+1641   4E48 00              DEFB 0
+1642   4E49             playerXPos
+1643   4E49 00              DEFB 0
+1644   4E4A             evenOddLoopFlag
+1645   4E4A 00              DEFB 0
+1646   4E4B             evenOddLoopCount    
+1647   4E4B 00              DEFB 0
+1648   4E4C             enemySpriteZeroPos_ST  
+1649   4E4C 00 00           DEFW 0
+1650   4E4E             enemySpriteOnePos_ST    
+1651   4E4E 00 00           DEFW 0
+1652   4E50             enemySpriteZeroPos_END
+1653   4E50 00 00           DEFW 0
+1654   4E52             enemySpriteOnePos_END   
+1655   4E52 00 00           DEFW 0
+1656   4E54             enemySpriteZeroPos_DIR
+1657   4E54 00 00           DEFW 0
+1658   4E56             enemySpriteOnePos_DIR  
+1659   4E56 00 00           DEFW 0
+1660   4E58             enemySpriteZeroPos_CUR
+1661   4E58 00 00           DEFW 0
+1662   4E5A             enemySpriteOnePos_CUR
+1663   4E5A 00 00           DEFW 0
+1664   4E5C             enemySpriteZeroPos_RATE
+1665   4E5C 00              DEFB 0
+1666   4E5D             enemySpriteOnePos_RATE
+1667   4E5D 00              DEFB 0    
+1668   4E5E             TEMP_enemySpritePointer
+1669   4E5E 00 00           DEFW 0
+1670   4E60             TEMP_enemySpritePos_CUR
+1671   4E60 00 00           DEFW 0
+1672   4E62             enemySpriteZero_HorizVert
+1673   4E62 00              DEFB 0
+1674   4E63             enemySpriteOne_HorizVert    
+1675   4E63 00              DEFB 0
+1676   4E64             TEMP_enemySpriteFrame
+1677   4E64 00              DEFB 0
+1678   4E65             enemySpriteFrameZero
+1679   4E65 00              DEFB 0
+1680   4E66             enemySpriteFrameOne    
+1681   4E66 00              DEFB 0
+1682   4E67             enemySprites   ;; keeping these to 4*4 for speed and size
+1683   4E67             enemySprite4by4BlankPointer
+1684   4E67 00 00           DEFW 0
+1685   4E69             YSpeed   
+1686   4E69 00              DEFB 0
+1687   4E6A             currentPlayerLocation 
+1688   4E6A 00 00           DEFW 0
+1689   4E6C             MissileInFlightFlag
+1690   4E6C 00              DEFB 0
+1691   4E6D             missileCountDown
+1692   4E6D 00              DEFB 0
+1693   4E6E             currentMissilePosition    
+1694   4E6E 00 00           DEFW 0
+1695   4E70             levelCountDown
+1696   4E70 00              DEFB 0
+1697   4E71             gameLevel
+1698   4E71 00              DEFB 0
+1699   4E72             restartLevelFlag
+1700   4E72 00              DEFB 0
+1701   4E73             enemySprite5by8Blank
+1702   4E73 00 00 00 00     DEFB 0, 0, 0 ,0, 0
+1702   4E77 00 
+1703   4E78 00 00 00 00     DEFB 0, 0, 0 ,0, 0
+1703   4E7C 00 
+1704   4E7D 00 00 00 00     DEFB 0, 0, 0 ,0, 0
+1704   4E81 00 
+1705   4E82 00 00 00 00     DEFB 0, 0, 0 ,0, 0
+1705   4E86 00 
+1706   4E87 00 00 00 00     DEFB 0, 0, 0 ,0, 0 
+1706   4E8B 00 
+1707   4E8C 00 00 00 00     DEFB 0, 0, 0 ,0, 0
+1707   4E90 00 
+1708   4E91 00 00 00 00     DEFB 0, 0, 0 ,0, 0
+1708   4E95 00 
+1709   4E96 00 00 00 00     DEFB 0, 0, 0 ,0, 0    
+1709   4E9A 00 
+1710   4E9B             
+1711   4E9B             sharkPosX
+1712   4E9B 00              DEFB 0
+1713   4E9C             sharkValid
+1714   4E9C 00              DEFB 0    
+1715   4E9D             sharkBonusCountUp
+1716   4E9D 00              DEFB 0
+1717   4E9E             deadPlayerSpritePointer
+1718   4E9E 00 00           DEFW 0   
+1719   4EA0             playerSpritePointer
+1720   4EA0 00 00           DEFW 0 
+1721   4EA2             pirateTopLeftPosition
+1722   4EA2 00 00           DEFW 0 
+1723   4EA4             pirateRowLeftPositionTemp
+1724   4EA4 00 00           DEFW 0     
+1725   4EA6             pirateValidBitMapMaskTemp
+1726   4EA6 00              DEFB 0
+1727   4EA7             bitsetMaskPirateTemp
+1728   4EA7 00              DEFB 0
+1729   4EA8             pirateSpriteCycleCount    
+1730   4EA8 00              DEFB 0
+1731   4EA9             pirateSpritesPointer
+1732   4EA9 00 00           DEFW 0
+1733   4EAB             pirateDirUpdate
+1734   4EAB 01 00           DEFW 1
+1735   4EAD             pirateXPos
+1736   4EAD 00              DEFB 0    
+1737   4EAE             playerLives
+1738   4EAE 00              DEFB 0    
+1739   4EAF             score_mem_tens
+1740   4EAF 00              DEFB 0
+1741   4EB0             score_mem_hund
+1742   4EB0 00              DEFB 0
+1743   4EB1             last_score_mem_tens
+1744   4EB1 00              DEFB 0
+1745   4EB2             last_score_mem_hund
+1746   4EB2 00              DEFB 0       
+1747   4EB3             jollyRogerDirUpdate
+1748   4EB3 01 00           DEFW 1
+1749   4EB5             jollyRogerXPos
+1750   4EB5 00              DEFB 0
+1751   4EB6             jollyRogerLocation
+1752   4EB6 00 00           DEFW 0
+1753   4EB8             previousJollyRogerLocation    
+1754   4EB8 00 00           DEFW 0
+1755   4EBA             gameOverRestartFlag    
+1756   4EBA 00              DEFB 0    
+1757   4EBB             goNextLevelFlag
+1758   4EBB 00              DEFB 0
+1759   4EBC                 
+1760   4EBC             LivesText
+1761   4EBC 31 2E 3B 2A     DEFB _L,_I,_V,_E,_S,_EQ,$ff    
+1761   4EC0 38 14 FF 
+1762   4EC3             TopLineText
+1763   4EC3 38 28 34 37     DEFB _S,_C,_O,_R,_E,_CL,__,__,__,__,__,__,__,_L,_E,_V,_E,_L,_CL,__,__,__,_L,_I,_V,_E,_S,_CL,__,__,__,$ff
+1763   4EC7 2A 0E 00 00 
+1763   4ECB 00 00 00 00 
+1763   4ECF 00 31 2A 3B 
+1763   4ED3 2A 31 0E 00 
+1763   4ED7 00 00 31 2E 
+1763   4EDB 3B 2A 38 0E 
+1763   4EDF 00 00 00 FF 
+1764   4EE3             
+1765   4EE3             title_screen_txt
+1766   4EE3 3F 3D 24 1D 	DEFB	_Z,_X,_8,_1,__,_P,_I,_R,_A,_T,_E,__,_I,_N,_V,_A,_D,_E,_R,_S,$ff
+1766   4EE7 00 35 2E 37 
+1766   4EEB 26 39 2A 00 
+1766   4EEF 2E 33 3B 26 
+1766   4EF3 29 2A 37 38 
+1766   4EF7 FF 
+1767   4EF8             keys_screen_txt_1
+1768   4EF8 38 00 39 34 	DEFB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,_P,__,_R,_I,_G,_H,_T,$ff
+1768   4EFC 00 38 39 26 
+1768   4F00 37 39 1A 00 
+1768   4F04 34 00 31 2A 
+1768   4F08 2B 39 1A 35 
+1768   4F0C 00 37 2E 2C 
+1768   4F10 2D 39 FF 
+1769   4F13             keys_screen_txt_2
+1770   4F13 00 00 00 00 	DEFB	__,__,__,__,__,__,__,_Z,__,_O,_R,__,_S,_P,_A,_C,_E,__,_EQ,__,_F,_I,_R,_E,,$ff    
+1770   4F17 00 00 00 3F 
+1770   4F1B 00 34 37 00 
+1770   4F1F 38 35 26 28 
+1770   4F23 2A 00 14 00 
+1770   4F27 2B 2E 37 2A 
+1770   4F2B 00 FF 
+1771   4F2D             
+1772   4F2D             game_objective_txt
+1773   4F2D 39 34 00 3C 	DEFB	_T,_O,__,_W,_I,_N,__,_S,_U,_R,_V,_I,_V,_E,__, _A,_L,_L,__,_P,_I,_R,_A,_T,_E,_S,$ff
+1773   4F31 2E 33 00 38 
+1773   4F35 3A 37 3B 2E 
+1773   4F39 3B 2A 00 26 
+1773   4F3D 31 31 00 35 
+1773   4F41 2E 37 26 39 
+1773   4F45 2A 38 FF 
+1774   4F48             game_objective_boarder   ; I know a bit wasteful but we have a whole 16K!
+1775   4F48 89 89 89 89 	DEFB	137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,$ff
+1775   4F4C 89 89 89 89 
+1775   4F50 89 89 89 89 
+1775   4F54 89 89 89 89 
+1775   4F58 89 89 89 89 
+1775   4F5C 89 89 89 89 
+1775   4F60 89 89 FF 
+1776   4F63             		
+1777   4F63             last_Score_txt
+1778   4F63 15 15 15 15 	DEFB 21,21,21,21,_L,_A,_S,_T,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff	
+1778   4F67 31 26 38 39 
+1778   4F6B 00 00 38 28 
+1778   4F6F 34 37 2A 15 
+1778   4F73 15 15 15 FF 
+1779   4F77             high_Score_txt
+1780   4F77 15 15 15 15 	DEFB 21,21,21,21,_H,_I,_G,_H,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff		
+1780   4F7B 2D 2E 2C 2D 
+1780   4F7F 00 00 38 28 
+1780   4F83 34 37 2A 15 
+1780   4F87 15 15 15 FF 
+1781   4F8B             credits_and_version_1
+1782   4F8B 00 27 3E 00 	DEFB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
+1782   4F8F 26 00 35 2E 
+1782   4F93 31 30 2E 33 
+1782   4F97 2C 39 34 33 
+1782   4F9B 00 1E 1C 1E 
+1782   4F9F 20 FF 
+1783   4FA1             credits_and_version_2
+1784   4FA1 00 00 3B 2A 	DEFB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_0,$ff    
+1784   4FA5 37 38 2E 34 
+1784   4FA9 33 00 3B 1C 
+1784   4FAD 1B 21 1B 1C 
+1784   4FB1 FF 
+1785   4FB2             credits_and_version_3
+1786   4FB2 00 00 00 3E 	DEFB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff       
+1786   4FB6 34 3A 39 3A 
+1786   4FBA 27 2A 0E 27 
+1786   4FBE 3E 39 2A 2B 
+1786   4FC2 34 37 2A 3B 
+1786   4FC6 2A 37 FF 
+1787   4FC9                 
+1788   4FC9                
+1789   4FC9 80          VariablesEnd:   DEFB $80
+1790   4FCA             BasicEnd: 
+1791   4FCA             #END
+1792   4FCA             
 tasm: Number of errors = 0
