@@ -180,9 +180,6 @@ Line1Text:      DB $ea                        ; REM
 	jp intro_title		; main entry poitn to the code ships the memory definitions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	jp intro_title		; main entry poitn to the code ships the memory definitions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 introWaitLoop
 	ld b,64
 introWaitLoop_1
@@ -925,6 +922,30 @@ endOfPirateSpriteUpdate
 
 
 checkIfMissileHit
+;;;; check if missile hit the shark, if the shark is valid
+    ld a, (sharkValid)
+    cp 0
+    jr z, skipCheckSharkHit 
+    ld de, (currentMissilePosition)
+    ld hl, Display+1
+    sbc hl, de
+    ld a, (sharkPosX)
+    cp l
+    jp nz, skipCheckSharkHit
+    ; shark hit
+    xor a
+    ld (sharkValid), a
+    ld b, 100
+increaseScoreSharkHitLoop
+    push bc
+    call increaseScore
+    pop bc
+    djnz increaseScoreSharkHitLoop
+     
+
+skipCheckSharkHit
+
+
     ld hl, (pirateTopLeftPosition)
 
     ld (pirateRowLeftPositionTemp), hl
