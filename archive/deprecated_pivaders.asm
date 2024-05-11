@@ -23,44 +23,38 @@
 ;;; https://youtube.com/@byteforever7829
 
 ;;; Known bug(s)
-;;; 1) sometimes the pirates don't move for a short time, either on level restart or new level.
-;;;    after a delay they start moving again. The rest of the gaem loop appears to be working
-;;;    correctly as you can still move left right and fire (and hit) the pirates?????
-;;  2) the high score doesn't register properly for number >= 100
+;;;
 
 
 ;some #defines for compatibility with other assemblers
-;pasmo only accepts DEFINE
-CLS EQU $0A2A
-
-;#define          DB .byte
-;#define         DW .word
-;#define         EQU  .equ
-;#define         ORG  .org
-;CLS				EQU $0A2A
+#define         DEFB .byte 
+#define         DEFW .word
+#define         EQU  .equ
+#define         ORG  .org
+CLS				EQU $0A2A
 
 ;#define DEBUG_PRINT_PIRATE_CYCLE
 ;#define DEBUG_PIRATE_DIR
 ;#define DEBUG_NO_MOVE_PIRATE  1
 ;#define DEBUG_START_PIRATES_LOWER
 
-KEYBOARD_READ_PORT_P_TO_Y	EQU $DF
-; for start key
-KEYBOARD_READ_PORT_A_TO_G	EQU $FD
+#define KEYBOARD_READ_PORT_P_TO_Y	$DF
+; for start key 
+#define KEYBOARD_READ_PORT_A_TO_G	$FD
 ; keyboard port for shift key to v
-KEYBOARD_READ_PORT_SHIFT_TO_V EQU $FE
+#define KEYBOARD_READ_PORT_SHIFT_TO_V $FE
 ; keyboard space to b
-KEYBOARD_READ_PORT_SPACE_TO_B EQU $7F
+#define KEYBOARD_READ_PORT_SPACE_TO_B $7F 
 ; keyboard q to t
-KEYBOARD_READ_PORT_Q_TO_T EQU $FB
+#define KEYBOARD_READ_PORT_Q_TO_T $FB
 
 ; starting port numbner for keyboard, is same as first port for shift to v
-KEYBOARD_READ_PORT EQU $FE
-SCREEN_WIDTH EQU 32
-SCREEN_HEIGHT EQU 23   ; we can use the full screen becuase we're not using PRINT or PRINT AT ROM subroutines
-MISSILE_COUNTDOWN_INIT EQU 18
+#define KEYBOARD_READ_PORT $FE 
+#define SCREEN_WIDTH 32
+#define SCREEN_HEIGHT 23   ; we can use the full screen becuase we're not using PRINT or PRINT AT ROM subroutines
+#define MISSILE_COUNTDOWN_INIT 18
 ;#define PLAYER_START_POS 604
-PLAYER_START_POS EQU 637
+#define PLAYER_START_POS 637
 
 
 VSYNCLOOP       EQU      2
@@ -68,7 +62,7 @@ VSYNCLOOP       EQU      2
 ; character set definition/helpers
 __:				EQU	$00	;spacja
 _QT:			EQU	$0B	;"
-_PD:			EQU	$0C	;funt
+_PD:			EQU	$0C	;funt 
 _SD:			EQU	$0D	;$
 _CL:			EQU	$0E	;:
 _QM:			EQU	$0F	;?
@@ -126,73 +120,68 @@ _Y				EQU $3E
 _Z				EQU $3F
 
 
-;;;; this is the whole ZX81 runtime system and gets assembled and
+;;;; this is the whole ZX81 runtime system and gets assembled and 
 ;;;; loads as it would if we just powered/booted into basic
 
            ORG  $4009             ; assemble to this address
+                                                                
+VERSN:          DEFB 0
+E_PPC:          DEFW 2
+D_FILE:         DEFW Display
+DF_CC:          DEFW Display+1                  ; First character of display
+VARS:           DEFW Variables
+DEST:           DEFW 0
+E_LINE:         DEFW BasicEnd 
+CH_ADD:         DEFW BasicEnd+4                 ; Simulate SAVE "X"
+X_PTR:          DEFW 0
+STKBOT:         DEFW BasicEnd+5
+STKEND:         DEFW BasicEnd+5                 ; Empty stack
+BREG:           DEFB 0
+MEM:            DEFW MEMBOT
+UNUSED1:        DEFB 0
+DF_SZ:          DEFB 2
+S_TOP:          DEFW $0002                      ; Top program line number
+LAST_K:         DEFW $fdbf
+DEBOUN:         DEFB 15
+MARGIN:         DEFB 55
+NXTLIN:         DEFW Line2                      ; Next line address
+OLDPPC:         DEFW 0
+FLAGX:          DEFB 0
+STRLEN:         DEFW 0
+T_ADDR:         DEFW $0c8d
+SEED:           DEFW 0
+FRAMES:         DEFW $f5a3
+COORDS:         DEFW 0
+PR_CC:          DEFB $bc
+S_POSN:         DEFW $1821
+CDFLAG:         DEFB $40
+MEMBOT:         DEFB 0,0 ;  zeros
+UNUNSED2:       DEFW 0
 
-VERSN
-    DB 0
-E_PPC:
-    DW 2
-D_FILE:
-    DW Display
-DF_CC:
-    DW Display+1                  ; First character of display
-VARS:
-    DW Variables
-DEST:           DW 0
-E_LINE:         DW BasicEnd
-CH_ADD:         DW BasicEnd+4                 ; Simulate SAVE "X"
-X_PTR:          DW 0
-STKBOT:         DW BasicEnd+5
-STKEND:         DW BasicEnd+5                 ; Empty stack
-BREG:           DB 0
-MEM:            DW MEMBOT
-UNUSED1:        DB 0
-DF_SZ:          DB 2
-S_TOP:          DW $0002                      ; Top program line number
-LAST_K:         DW $fdbf
-DEBOUN:         DB 15
-MARGIN:         DB 55
-NXTLIN:         DW Line2                      ; Next line address
-OLDPPC:         DW 0
-FLAGX:          DB 0
-STRLEN:         DW 0
-T_ADDR:         DW $0c8d
-SEED:           DW 0
-FRAMES:         DW $f5a3
-COORDS:         DW 0
-PR_CC:          DB $bc
-S_POSN:         DW $1821
-CDFLAG:         DB $40
-MEMBOT:         DB 0,0 ;  zeros
-UNUNSED2:       DW 0
-
-            ORG 16509       ;; we have to push the place in memory for this here becuase basic has
+            ORG 16509       ;; we have to push the place in memory for this here becuase basic has 
                     ;; to start at 16514 if memory was tight we could use the space between UNUSED2
                     ;; and Line1 for variables
 
-Line1:          DB $00,$0a                    ; Line 10
-                DW Line1End-Line1Text         ; Line 10 length
-Line1Text:      DB $ea                        ; REM
+Line1:          DEFB $00,$0a                    ; Line 10
+                DEFW Line1End-Line1Text         ; Line 10 length
+Line1Text:      DEFB $ea                        ; REM
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	jp intro_title		; main entry poitn to the code ships the memory definitions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+	
 introWaitLoop
 	ld b,64
 introWaitLoop_1
-    push bc
+    push bc	
     pop bc
 	djnz introWaitLoop_1
     jp read_start_key_1     ;; have to have 2 labels as not a call return
-
-secondIntroWaitLoop
-
+   
+secondIntroWaitLoop    
+   
     ld b, 64
 introWaitLoop_2
     push bc
@@ -200,24 +189,25 @@ introWaitLoop_2
     djnz introWaitLoop_2
 
 	jp read_start_key_2
-
+	
 intro_title
 	call CLS  ; clears screen and sets the boarder
 ;    ld a, (gameOverRestartFlag)
 ;    cp 1
 ;    call z, gameOverDeathScene
-
-
+    
+    
     xor a
     ld (gameOverRestartFlag), a
+        
+    ld a, (score_mem_tens)
     ld (last_score_mem_tens),a
-    ld (last_score_mem_hund),a
+    ld a, (score_mem_hund)
+    ld (last_score_mem_hund),a        
     ld (sharkPosX), a
     ld (sharkValid), a
     ld (sharkBonusCountUp), a
-    ld (score_mem_hund),a
-    ld (score_mem_tens),a
-
+    
 	ld bc,6
 	ld de,title_screen_txt
 	call printstring
@@ -227,74 +217,72 @@ intro_title
     ld bc,6+66
 	ld de,title_screen_txt
 	call printstring
-	ld bc,202
+	ld bc,202    
 	ld de,keys_screen_txt_1
-	call printstring
-
-    ld bc,235
+	call printstring		
+    
+    ld bc,235    
 	ld de,keys_screen_txt_2
-	call printstring
-
+	call printstring		
+    
 
 
 	ld bc,301
 	ld de,game_objective_boarder
-	call printstring
+	call printstring	
 	ld bc,334
 	ld de,game_objective_txt
-	call printstring
+	call printstring	    
 	ld bc,367
 	ld de,game_objective_boarder
-	call printstring
-
+	call printstring	
+    
 	ld bc,436
-	ld de,high_Score_txt
-	call printstring
-
+	ld de,last_Score_txt
+	call printstring	
+	
     ld bc, 476
-    ;ld de, last_score_mem_hund ; load address of hundreds
-    ld de, high_score_hund
-	call printNumber
+    ld de, last_score_mem_hund ; load address of hundreds
+	call printNumber    
 	ld bc, 478			; bc is offset from start of display
-	;ld de, last_score_mem_tens ; load address of  tens
-	ld de, high_score_tens
-	call printNumber
-	ld bc,537
+	ld de, last_score_mem_tens ; load address of  tens		
+	call printNumber	
+	ld bc,537	
 	ld de,credits_and_version_1
-	call printstring
-	ld bc,569
+	call printstring		
+	ld bc,569	
 	ld de,credits_and_version_2
-	call printstring
-	ld bc,634
+	call printstring	
+	ld bc,634	
 	ld de,credits_and_version_3
 	call printstring
-    ld de, 529
-    ld hl, Display+1
-    add hl, de
+    ld de, 529    
+    ld hl, Display+1 
+    add hl, de        
     ex de, hl
     ld hl, playerSpriteData
     ld c, 8
-    ld b, 8
+    ld b, 8    
     call drawSprite
-
-
-
+   
+   
+	
 read_start_key_1
-	ld a, KEYBOARD_READ_PORT_A_TO_G
-	in a, (KEYBOARD_READ_PORT)					; read from io port
-	bit 1, a									; check S key pressed
-	jp nz, secondIntroWaitLoop
+	ld a, KEYBOARD_READ_PORT_A_TO_G	
+	in a, (KEYBOARD_READ_PORT)					; read from io port	
+	bit 1, a									; check S key pressed 
+	jp nz, secondIntroWaitLoop    
     ;; else drop into preinit then initVariables
     jr preinit
-
+    
 read_start_key_2
-	ld a, KEYBOARD_READ_PORT_A_TO_G
-	in a, (KEYBOARD_READ_PORT)					; read from io port
-	bit 1, a									; check S key pressed
+	ld a, KEYBOARD_READ_PORT_A_TO_G	
+	in a, (KEYBOARD_READ_PORT)					; read from io port	
+	bit 1, a									; check S key pressed 
 	jp nz, introWaitLoop
     jr preinit  ; not really necessary
-
-
+    
+    
 preinit
 ;; initialise variables that are once per game load/start
     call CLS
@@ -308,84 +296,84 @@ initVariables
 
     xor a
     ld a, (MissileInFlightFlag)
-    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
     ld (nextPirateToFireIndex), a
     ld (restartLevelFlag), a
-
+    
     ld a, (missileCountDown)
     ld a, 9
     ld (playerXPos), a
     ld hl, playerSpriteData
-    ld (playerSpritePointer), hl
-    ld hl, Display+1
+    ld (playerSpritePointer), hl 
+    ld hl, Display+1 
     ld de, PLAYER_START_POS
-    add hl, de
+    add hl, de 
     ld (currentPlayerLocation), hl
-    ld hl, Display+1
+    ld hl, Display+1 
     ld de, 6
-    add hl, de
+    add hl, de     
     ld (jollyRogerLocation), hl
     ld hl, 1
     ld (jollyRogerDirUpdate),hl
     ld a, 5
     ld (jollyRogerXPos),a
-
+    
     ld hl, 1
     ld (pirateDirUpdate),hl
     ld a, 5
     ld (pirateXPos),a
-
-    ld a, 3
+    
+    ld a, 3 
     ld (playerLives), a
-
+    
     ld a, 8
     ld (levelCountDown), a
-
+    
     ld a, $01
     daa
     ld (gameLevel), a
-
+    
     xor a
-    ld (gameOverRestartFlag), a
+    ld (gameOverRestartFlag), a        
     ld a, (score_mem_tens)
     ld (last_score_mem_tens),a
     ld a, (score_mem_hund)
-    ld (last_score_mem_hund),a
+    ld (last_score_mem_hund),a        
+    
+    
 
-
-
-    ld hl, Display+1
-IF DEFINED DEBUG_START_PIRATES_LOWER
+    ld hl, Display+1 
+#ifdef DEBUG_START_PIRATES_LOWER
     ld de, 366
-ELSE
+#else    
     ld de, 36
-ENDIF
-    add hl, de
+#endif    
+    add hl, de 
     ld (pirateTopLeftPosition), hl
     xor a
     ld (pirateSpriteCycleCount), a
     ;ld hl, pirate3sprites
     ld hl, pirate3sprites4x4
-    ld (pirateSpritesPointer), hl
-    ld hl, 1
+    ld (pirateSpritesPointer), hl 
+    ld hl, 1 
     ld (pirateDirUpdate), hl
     ld a, $ff   ; every pirate is alive
     ;ld a, $01   ; for test only bottom right pirate is alive
-    ;ld a, $80   ; for test only top left pirate is alive
+    ;ld a, $80   ; for test only top left pirate is alive    
     ;ld a, $55   ; for test every other pirate is alive
     ld (pirateValidBitMap), a
-
+    
     xor a
     ld (goNextLevelFlag), a
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
 gameLoop    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	ld b,VSYNCLOOP
-waitForTVSync
+waitForTVSync	
 	call vsync
 	djnz waitForTVSync
-
+    
     ld a, (goNextLevelFlag)
     cp 1
     call z, executeNextLevelStart
@@ -393,76 +381,72 @@ waitForTVSync
     ld a, (restartLevelFlag)
     cp 1
     call z, executeRestartLevel
-
+    
 
     ld a, (levelCountDown)
     ld b, a
     ld a, (evenOddLoopCount)
     inc a
-    cp b
+    cp b    
     jr z, resetEvenOddAndSetFlag
     ld (evenOddLoopCount), a
     xor a
-    ld (evenOddLoopFlag), a    ; used for multi rate enemies
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies    
     jr continueWithGameLoop
-
-resetEvenOddAndSetFlag
+    
+resetEvenOddAndSetFlag    
     xor a
     ld (evenOddLoopCount), a
     ld a, 1
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
 
-continueWithGameLoop
+continueWithGameLoop        
 
-
+      
     ld a, (gameOverRestartFlag)
     cp 1
     jp z, intro_title
-
-
-    ld a, (evenOddLoopFlag)
-    cp 0
-    jr z, skipSharkInGameLoop
-
+    
+    
     ld a, (sharkValid)
     cp 1
-    call z, drawSharkBonus
-skipSharkInGameLoop
+    call z, drawSharkBonus   
+    
     call setRandomPirateToShoot   ; this sets nextPirateToFireIndex
 
     call drawMainInvaderGrid
-
+    
     call pirateFire   ; this will use and nextPirateToFireIndex also check pirateFiringFlag
-
-
+    
+    
     ld de, (currentPlayerLocation)
     ld hl, blankSprite
     ld c, 8
-    ld b, 4
+    ld b, 4 
     call drawSprite
-
+    
     ; ld hl, blankSprite
     ; ld de, (previousJollyRogerLocation)
     ; ld c, 8
-    ; ld b, 8
-    ; call drawSprite
-    ; call updateJollyRoger
+    ; ld b, 8    
+    ; call drawSprite    
+    ; call updateJollyRoger    
+    
+    
 
-
-
-
-
-    call printLivesAndScore
-
+    
+        
+    call printLivesAndScore   
+       
     ;call blankEnemySprites
-    ;call drawEnemySprites
+    ;call drawEnemySprites        
     ;call updateEnemySpritePositions
-
-
+       
+   
 ; keyboard layout for reading keys on ZX81
 ; BIT   left block      right block  BIT
 ; off                                off in <port>, when ld a, <port>
-;       0  1 2 3 4     4 3 2 1 0                 <<< bit to check for each column after in a, $fe
+;       0  1 2 3 4     4 3 2 1 0                 <<< bit to check for each column after in a, $fe 
 ; 3   ( 1  2 3 4 5 ) ( 6 7 8 9 0 )     4
 ; 2   ( Q  W E R T ) ( Y U I O P )     5
 ; 1   ( A  S D F G ) ( H I K L n/l)    6
@@ -471,180 +455,190 @@ skipSharkInGameLoop
 ; to read keys 1 2 3 4 5
 ; set all bits except bit 3 of register A = 1 1 1 1 0 1 1 1= f7, then execute in a, $fe  (fe is the "keyboard read port")
 ; now register a will contain a bit pattern to check for which key in that block was set, eg Key "1" = bit 0 of a
-; ld a, $f7
-; in a, $fe
+; ld a, $f7    
+; in a, $fe    
 ; similarly for the rest, to read from block A S D F G, set a to 1 1 1 1 1 1 1 0 1 = $fd
 
-
+    
     ;; read keys
-    ld a, KEYBOARD_READ_PORT_P_TO_Y
-    in a, (KEYBOARD_READ_PORT)					; read from io port
+    ld a, KEYBOARD_READ_PORT_P_TO_Y			
+    in a, (KEYBOARD_READ_PORT)					; read from io port	
     bit 1, a                            ; O
     jp z, moveLeft
 
 
-    ld a, KEYBOARD_READ_PORT_P_TO_Y
-    in a, (KEYBOARD_READ_PORT)					; read from io port
+    ld a, KEYBOARD_READ_PORT_P_TO_Y			
+    in a, (KEYBOARD_READ_PORT)					; read from io port		
     bit 0, a					        ; P
     jp z, moveRight
 
 
-    ld a, KEYBOARD_READ_PORT_SPACE_TO_B
-    in a, (KEYBOARD_READ_PORT)					; read from io port
+    ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+    in a, (KEYBOARD_READ_PORT)					; read from io port		
     bit 0, a						    ; SPACE
     jp z, doFireMissile
-
-    ld a, KEYBOARD_READ_PORT_SHIFT_TO_V
-    in a, (KEYBOARD_READ_PORT)					; read from io port
+    
+    ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+    in a, (KEYBOARD_READ_PORT)					; read from io port		
     bit 1, a						    ; Z
-    jp z, doFireMissile
-skipFireKeyDetect_1
+    jp z, doFireMissile    
+skipFireKeyDetect_1    
     jp updateRestOfScreen                       ; if no key pressed continue
 
-moveLeft
+moveLeft         
     ld a, (playerXPos)
     dec a
     cp 0      ;;; this prevents the player moving past edge, but if it's a door
               ;; trigger seperate code to move to new room
-    jp z, updateRestOfScreen
+    jp z, updateRestOfScreen   
     ld (playerXPos), a
-
-
+    
+        
     ld hl, (currentPlayerLocation)
     dec hl
-    ld (currentPlayerLocation), hl
+    ld (currentPlayerLocation), hl  
 
-
-    ld a, KEYBOARD_READ_PORT_SPACE_TO_B
-    in a, (KEYBOARD_READ_PORT)					; read from io port
+     
+    ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+    in a, (KEYBOARD_READ_PORT)					; read from io port		
     bit 0, a						    ; SPACE
     jp z, doFireMissile
-
-    ld a, KEYBOARD_READ_PORT_SHIFT_TO_V
-    in a, (KEYBOARD_READ_PORT)					; read from io port
+    
+    ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+    in a, (KEYBOARD_READ_PORT)					; read from io port		
     bit 1, a						    ; Z
-    jp z, doFireMissile
-    jp updateRestOfScreen
-
-moveRight
+    jp z, doFireMissile        
+    jp updateRestOfScreen 
+    
+moveRight       
     ld a, (playerXPos)
     inc a
     cp 24          ;;; this prevents the player moving past edge, but if it's a door
                    ;; trigger seperate code to move to new room
-
-    jp z, updateRestOfScreen
+    
+    jp z, updateRestOfScreen   
     ld (playerXPos), a
-
-
-
-    ld hl, (currentPlayerLocation)
+    
+    
+    
+    ld hl, (currentPlayerLocation)    
     inc hl
-    ld (currentPlayerLocation), hl
-
-    ld a, KEYBOARD_READ_PORT_SPACE_TO_B
-    in a, (KEYBOARD_READ_PORT)					; read from io port
+    ld (currentPlayerLocation), hl     
+  
+    ld a, KEYBOARD_READ_PORT_SPACE_TO_B			
+    in a, (KEYBOARD_READ_PORT)					; read from io port		
     bit 0, a						    ; SPACE
     jp z, doFireMissile
 
-    ld a, KEYBOARD_READ_PORT_SHIFT_TO_V
-    in a, (KEYBOARD_READ_PORT)					; read from io port
+    ld a, KEYBOARD_READ_PORT_SHIFT_TO_V			
+    in a, (KEYBOARD_READ_PORT)					; read from io port		
     bit 1, a						    ; Z
-    jp z, doFireMissile
+    jp z, doFireMissile         
 
-    jp updateRestOfScreen
-
-doFireMissile      ; triggered when jump key pressed just sets the
+    jp updateRestOfScreen 
+    
+doFireMissile      ; triggered when jump key pressed just sets the       
     ld a, (MissileInFlightFlag)
     cp 1
     jp z, skipLaunchMissile
     ;; we first need to work out where the missiles should fire from based on current player location
     ;; unless we're in power up mode then just fires form middle of nose of ship
-
-    ;; in power up mode we'll fire from nose and wing tips :) (note: not yet implemented)
+    
+    ;; in power up mode we'll fire from nose and wing tips :) (note: not yet implemented) 
     ld hl, (currentPlayerLocation)
-    ld de, -31
-    add hl, de
+    ld de, -31  
+    add hl, de    
     ld (currentMissilePosition), hl
     ;;; setup the missile "Time To Live"  (like ethernet TTL right :)
     ld a, MISSILE_COUNTDOWN_INIT
     ld (missileCountDown), a
     ld a, 1
     ld (MissileInFlightFlag), a
-
+          
 
 skipLaunchMissile
-updateRestOfScreen
-
-    ld hl, (playerSpritePointer)
+updateRestOfScreen 
+    
+    ld hl, (playerSpritePointer)    
     ld de, (currentPlayerLocation)
     ld c, 8
-    ld b, 4
+    ld b, 4    
     call drawSprite
 
+;; the idea is to use the skull and cross bones as an end of level "boss"
+#if 0    
+    ld hl, jollyRoger
+    ld de, (jollyRogerLocation)
+    ld c, 8
+    ld b, 8    
+    call drawSprite    
+    call updateJollyRoger    
+#endif    
+    
     ld a, (MissileInFlightFlag)
     cp 0
     jp z, skipMissileDraw
-
+    
     ld hl, (currentMissilePosition)
     ld de, 33
     add hl, de
-    ex de, hl
+    ex de, hl    
     ld hl, blankSprite
     ld c, 4
-    ld b, 4
-    call drawSprite
-
+    ld b, 4 
+    call drawSprite    
+    
     ld hl, missileData
-    ld de, (currentMissilePosition)
+    ld de, (currentMissilePosition)        
     ld c, 4
-    ld b, 4
+    ld b, 4    
     call drawSprite
-
-    call checkIfMissileHit
-
+        
+    call checkIfMissileHit    
+       
     call updateMissilePosition
 skipMissileDraw
-
+    
     jp gameLoop
-
+    
 
 pirateFire
     ret
-
-
+    
+    
 updateMissilePosition
       ld a, (missileCountDown)
       dec a
       cp 0
       jp z, noMissileUpClearMissile
-
-      ld (missileCountDown), a
-
-      ld hl, (currentMissilePosition)
+     
+      ld (missileCountDown), a      
+      
+      ld hl, (currentMissilePosition)    
       ld de, -33
       add hl, de
       ld (currentMissilePosition), hl
       jr noMissileUpdate
 noMissileUpClearMissile
       xor a
-      ld (MissileInFlightFlag), a
-noMissileUpdate
+      ld (MissileInFlightFlag), a 
+noMissileUpdate      
       ret
-
+      
 
 updatePirateXPos
-IF DEFINED  DEBUG_NO_MOVE_PIRATE
-    ret
-ENDIF
+#ifdef DEBUG_NO_MOVE_PIRATE
+    ret   
+#endif    
 
-    ld a, (pirateXPos)
+    ld a, (pirateXPos)            
     cp 14
     jr z, reversePirateDirToNeg
     cp 3
     jr z, reversePirateDirToPos
-
-    jr endOfUpdatePirateXPos
-
+        
+    jr endOfUpdatePirateXPos    
+    
 reversePirateDirToNeg
     ld a, (sharkBonusCountUp)
     inc a
@@ -652,23 +646,23 @@ reversePirateDirToNeg
     cp 2
     jr z, triggerShark
     jr notriggerShark
-triggerShark
+triggerShark    
     xor a
     ld (sharkBonusCountUp), a
     ld a, 24
     ld (sharkPosX), a
     ld a, 1
     ld (sharkValid), a
-
-notriggerShark
-    ld hl, -1
+    
+notriggerShark    
+    ld hl, -1 
     ld (pirateDirUpdate), hl
     ;; also shove down one row
     ;before we do that we need to blank the line where the pirates "heads" were
     ld de, (pirateTopLeftPosition)
     ld hl, blankSprite
     ld c, 16
-    ld b, 1
+    ld b, 1 
     call drawSprite
     ld hl, (pirateTopLeftPosition)
     ld de, 165
@@ -676,25 +670,25 @@ notriggerShark
     ex de, hl
     ld hl, blankSprite
     ld c, 16
-    ld b, 1
+    ld b, 1 
     call drawSprite
     ;; finally move one row down
     ld hl, (pirateTopLeftPosition)
     ld de, 33
     add hl, de
-    ld (pirateTopLeftPosition),hl
-
-    jr endOfUpdatePirateXPos
-
-reversePirateDirToPos
-    ld hl, 1
+    ld (pirateTopLeftPosition),hl   
+    
+    jr endOfUpdatePirateXPos 
+    
+reversePirateDirToPos    
+    ld hl, 1 
     ld (pirateDirUpdate), hl
     ;; also shove down one row
     ;before we do that we need to blank the line where the pirates "heads" were
     ld de, (pirateTopLeftPosition)
     ld hl, blankSprite
     ld c, 16
-    ld b, 1
+    ld b, 1 
     call drawSprite
     ;; and blank the middle bit between the rows of pirates
     ld hl, (pirateTopLeftPosition)
@@ -703,202 +697,202 @@ reversePirateDirToPos
     ex de, hl
     ld hl, blankSprite
     ld c, 16
-    ld b, 1
+    ld b, 1 
     call drawSprite
-
+    
     ;; finally move one row down
     ld hl, (pirateTopLeftPosition)
     ld de, 33
     add hl, de
-    ld (pirateTopLeftPosition),hl
-    jr endOfUpdatePirateXPos
-
+    ld (pirateTopLeftPosition),hl    
+    jr endOfUpdatePirateXPos 
+    
 endOfUpdatePirateXPos
-IF DEFINED DEBUG_PIRATE_DIR
-    ld a,(pirateXPos)
+#ifdef DEBUG_PIRATE_DIR
+    ld a,(pirateXPos)  
     ld de, 1
     call print_number8bits
-ENDIF
+#endif   
     ld hl, (pirateTopLeftPosition)
     ;ld (previousPirateLocation), hl
     ld de, (pirateDirUpdate)
     add hl, de
     ld (pirateTopLeftPosition), hl
 
-    ld hl, (pirateDirUpdate)
+    ld hl, (pirateDirUpdate)    
     ld a, (pirateXPos)
     add a, l
-    ld (pirateXPos), a
-
+    ld (pirateXPos), a 
+    
     ret
-
-updateJollyRoger
-    ld a, (jollyRogerXPos)
-    cp 23
+      
+updateJollyRoger   
+    ld a, (jollyRogerXPos)        
+    cp 23  
     jr z, reverseDirToNeg
     cp 1
     jr z, reverseDirToPos
-
-    jr endOfUpdateJollyRoger
-
+        
+    jr endOfUpdateJollyRoger    
+    
 reverseDirToNeg
-    ld hl, -1
+    ld hl, -1 
     ld (jollyRogerDirUpdate), hl
-    jr endOfUpdateJollyRoger
-
-reverseDirToPos
-    ld hl, 1
+    jr endOfUpdateJollyRoger 
+    
+reverseDirToPos    
+    ld hl, 1 
     ld (jollyRogerDirUpdate), hl
-    jr endOfUpdateJollyRoger
-
-endOfUpdateJollyRoger
-
+    jr endOfUpdateJollyRoger 
+    
+endOfUpdateJollyRoger    
+    
     ld hl, (jollyRogerLocation)
     ld (previousJollyRogerLocation), hl
     ld de, (jollyRogerDirUpdate)
     add hl, de
     ld (jollyRogerLocation), hl
 
-    ld hl, (jollyRogerDirUpdate)
+    ld hl, (jollyRogerDirUpdate)    
     ld a, (jollyRogerXPos)
     add a, l
-    ld (jollyRogerXPos), a
-
+    ld (jollyRogerXPos), a 
+    
     ret
 
 blankToLAndROfInvader
-    ld hl, (pirateTopLeftPosition)
+    ld hl, (pirateTopLeftPosition)    
     ld de, -1
     add hl, de
     ex de, hl
     ld hl, enemySprite5by8Blank
     ld c, 1
-    ld b, 9
-    call drawSprite
-    ld hl, (pirateTopLeftPosition)
+    ld b, 9 
+    call drawSprite              
+    ld hl, (pirateTopLeftPosition)    
     ld de, 16
     add hl, de
     ex de, hl
     ld hl, enemySprite5by8Blank
     ld c, 1
-    ld b, 9
-    call drawSprite
+    ld b, 9 
+    call drawSprite                  
    ret
-
+   
 drawMainInvaderGrid
 
 
-    ;; first check if any piratres are left
+    ;; first check if any piratres are left   
     ld b, $ff     ; set a (and then next line b to all ones)
     ld a, (pirateValidBitMap)
     and b
     jr z, setWaveComplete
     jr checkIfPlayerHitPirates
-setWaveComplete
+setWaveComplete    
     ld a, 1
     ld (goNextLevelFlag), a
     ret
 
-checkIfPlayerHitPirates
+checkIfPlayerHitPirates    
     ;; second check if the bottom pirate has reached the lowest line
     ;; if so restart the level and decrease score by 1
-
+    
     ;; TODO first version will only check the top left most has reach low point
     ;; need logic to check if any bottom row pirates left if so let it go lower
     ld hl, (pirateTopLeftPosition)
-    ld (pirateRowLeftPositionTemp), hl
+    ld (pirateRowLeftPositionTemp), hl 
     ld hl, Display+1
     ld de, $018e   ; $018e is the offset to the lowest row the pirates should be able to get
     add hl, de
     ex de, hl
-    ld hl, (pirateRowLeftPositionTemp) ;; reload hl with pirateRowLeftPositionTemp
+    ld hl, (pirateRowLeftPositionTemp) ;; reload hl with pirateRowLeftPositionTemp   
     ld a, h
     cp d
     jr z, checkNextPirateLowest
-    jr continueDrawPirates
-checkNextPirateLowest
+    jr continueDrawPirates 
+checkNextPirateLowest        
     ld a, l
     cp e
-    jr z, pirateReachedLowest
-    jr continueDrawPirates
+    jr z, pirateReachedLowest 
+    jr continueDrawPirates 
 pirateReachedLowest
     ld a, 1
     ld (restartLevelFlag), a
     ret
 
-continueDrawPirates
+continueDrawPirates    
 ;; we have an area of memory which will represent flags for if each of the grid of 5 rows of
-;; 5 columnsn invaders is valid (ie not been killed). This code will loop round that and
-;; display an invader sprite if required
+;; 5 columnsn invaders is valid (ie not been killed). This code will loop round that and 
+;; display an invader sprite if required       
     call blankToLAndROfInvader
     ld b, 2
     ld hl, (pirateTopLeftPosition)
     ld (pirateRowLeftPositionTemp), hl
     ld a, $80    ; setup a moving bit mask which we'll use to determine if the pirate is shot or not
     ld (pirateValidBitMapMaskTemp), a
-
-
-pirateRowDrawLoop
+    
+    
+pirateRowDrawLoop    
 
    push bc
-
-        ld b, 4
-pirateColDrawLoop
-            push bc
+        
+        ld b, 4       
+pirateColDrawLoop 
+            push bc 
                 ;; put some logic here to determine if the pirate was shot or not
-
+                
                 ld a, (pirateValidBitMapMaskTemp)
                 ld b, a
                 ld a, (pirateValidBitMap)
-                and b
+                and b                
                 push af
                 rr b
                 ld a, b
                 ld (pirateValidBitMapMaskTemp),a
                 pop af
-                jr z, skipDrawThisPirate
-
-
+                jr z, skipDrawThisPirate    
+                
+                
                 ld de, (pirateRowLeftPositionTemp)
                 ld hl, (pirateSpritesPointer)
                 ld c, 4
-                ;ld b, 8
-                ld b, 4
-                call drawSprite
+                ;ld b, 8 
+                ld b, 4 
+                call drawSprite          
                 jr continueWithPirateLoop
 skipDrawThisPirate
                 ;; but draw a blank
                 ld de, (pirateRowLeftPositionTemp)
                 ld hl, blankSprite
                 ld c, 4
-                ;ld b, 8
-                ld b, 4
-                call drawSprite
-continueWithPirateLoop
+                ;ld b, 8 
+                ld b, 4 
+                call drawSprite                          
+continueWithPirateLoop                
                 ld hl, 4
                 ld de, (pirateRowLeftPositionTemp)
-                add hl, de
-                ld (pirateRowLeftPositionTemp), hl
+                add hl, de   
+                ld (pirateRowLeftPositionTemp), hl                
             pop bc
-            djnz pirateColDrawLoop
-
-            ld hl, (pirateTopLeftPosition)
+            djnz pirateColDrawLoop        
+            
+            ld hl, (pirateTopLeftPosition)    
             ld de, 165
             add hl, de
             ld (pirateRowLeftPositionTemp), hl
 
-   pop bc
+   pop bc    
    djnz pirateRowDrawLoop
-
+     
    ld a, (evenOddLoopFlag)
    cp 1
    jr z, updatePirateSpriteCycle
    jr endOfPirateSpriteUpdate
-   ; update the sprite to draw from the 3 cycles
-updatePirateSpriteCycle
+   ; update the sprite to draw from the 3 cycles 
+updatePirateSpriteCycle   
    ; update X position and reverse direction if reached end limits
    call updatePirateXPos
-
+   
    ld a, (pirateSpriteCycleCount)
    inc a
    cp 2
@@ -909,45 +903,41 @@ updatePirateSpriteCycle
    add hl, de
    ld (pirateSpritesPointer), hl
    ld a, (pirateSpriteCycleCount)     ;; currentPlayerLocation is already offset to
-IF DEFINED DEBUG_PRINT_PIRATE_CYCLE
+#ifdef DEBUG_PRINT_PIRATE_CYCLE   
    ld de, 1
    call print_number8bits
-ENDIF
+#endif   
    jr endOfPirateSpriteUpdate
-
-resetPirateSprite
+   
+resetPirateSprite   
    xor a
    ld (pirateSpriteCycleCount), a
    ;ld hl, pirate3sprites
    ld hl, pirate3sprites4x4
-   ld (pirateSpritesPointer), hl
+   ld (pirateSpritesPointer), hl 
 
-endOfPirateSpriteUpdate
-   ret
+endOfPirateSpriteUpdate 
+   ret   
+   
+   
+;; check if missile hit pirates 
 
 
-;; check if missile hit pirates
-
-
-checkIfMissileHit
+checkIfMissileHit       
 ;;;; check if missile hit the shark, if the shark is valid
     ld a, (sharkValid)
     cp 0
     jr z, skipCheckSharkHit
     ld de, (currentMissilePosition)
-    ld hl, (sharkAbsoluteScreenPos)
+    ld hl, Display+1
     sbc hl, de
-    ld a, h
-    cp 0
+    ld a, (sharkPosX)
+    cp l
     jp nz, skipCheckSharkHit
-    ld a, l
-    cp 0
-    jp nz, skipCheckSharkHit
-
     ; shark hit
     xor a
     ld (sharkValid), a
-    ld b, 10
+    ld b, 100
 increaseScoreSharkHitLoop
     push bc
     call increaseScore
@@ -958,56 +948,57 @@ increaseScoreSharkHitLoop
 skipCheckSharkHit
 
 
-    ld hl, (pirateTopLeftPosition)
 
+    ld hl, (pirateTopLeftPosition)
+    
     ld (pirateRowLeftPositionTemp), hl
-    ;becasue the whole loop is setup to count down, and because we want to check the
+    ;becasue the whole loop is setup to count down, and because we want to check the 
     ; lower row first we need to move the "Tope left position to be the bottom right
     ld de, 177
     add hl, de
     ld (pirateRowLeftPositionTemp), hl  ; this now has bottom right pirate
-
-    ; setup a moving bit mask which we'll use to determine if the pirate
-    ; is shot or not. this is basically all ones except the top bit is zero,
+    
+    ; setup a moving bit mask which we'll use to determine if the pirate 
+    ; is shot or not. this is basically all ones except the top bit is zero, 
     ; this will get rotated round in the loop and used to and with the pirateValidBitMap
     ld a, $fe
-    ld (pirateValidBitMapMaskTemp), a
+    ld (pirateValidBitMapMaskTemp), a        
 
     ; this is used to and with the current mask to check if missile collision check is needed
-    ld a, $01
-    ld (bitsetMaskPirateTemp), a
+    ld a, $01      
+    ld (bitsetMaskPirateTemp), a  
     ld b, 8
-missileCheckHitLoop
+missileCheckHitLoop    
     push bc
         ;; check if we even need to check this pirate, if not valid then skip
-        ld a, (bitsetMaskPirateTemp)
+        ld a, (bitsetMaskPirateTemp)        
         ld b, a
         ld a, (pirateValidBitMap)
         and b
         jr z, noHitMissile
-
+        
         ld de, (pirateRowLeftPositionTemp)
         ld hl, (currentMissilePosition)
-
+        
         ; now compare upper and lower bytes of hl and de
         ld a, h
         cp d
         jr z, checkNextPirateMissileHit
-        jr noHitMissile
-checkNextPirateMissileHit
+        jr noHitMissile 
+checkNextPirateMissileHit        
         ld a, l
         cp e
-        jr z, MissileHitPirate
-        jr noHitMissile
+        jr z, MissileHitPirate 
+        jr noHitMissile 
 MissileHitPirate
         ;; missile/cannon HIT!!!
-
-        ld a, (pirateValidBitMapMaskTemp)
+        
+        ld a, (pirateValidBitMapMaskTemp)        
         ld b, a
         ld a, (pirateValidBitMap)
         and b
-        ld (pirateValidBitMap), a
-
+        ld (pirateValidBitMap), a 
+        
         ;also if we have hit then disable the missile now!!
         xor a
         ld (MissileInFlightFlag), a
@@ -1015,66 +1006,66 @@ MissileHitPirate
         ld (currentMissilePosition), hl
         call increaseScore
         pop bc   ; have to do this becasue we're exiting early out of loop
-
-        ;; let's draw an explosion and tombstone breifly
+        
+        ;; let's draw an explosion and tombstone breifly 
         ld b, 3
         ld hl, explsion4x4
-explosionDrawLoop
-        push bc
+explosionDrawLoop        
+        push bc 
             push hl
                 ld de, (pirateRowLeftPositionTemp)
                 ld c, 4
-                ld b, 4
+                ld b, 4                    
                 call drawSprite
                 ld b, 32
-explosionDelayLoop
-                push bc
-                ld b, 64
-explosionDelayLoop2
-
+explosionDelayLoop  
+                push bc 
+                ld b, 64                 
+explosionDelayLoop2                
+                    
                     djnz explosionDelayLoop2
-
-                pop bc
+                    
+                pop bc 
                 djnz explosionDelayLoop
             pop hl
             ld de, 16
-            add hl, de
-        pop bc
+            add hl, de         
+        pop bc 
         djnz explosionDrawLoop
-
-
+        
+        
         ret ;; exit early
 noHitMissile
         ;; update mask which is the only bit not set we check next
         ;; e.g second pirate is 0x10111111
         ld a, (pirateValidBitMapMaskTemp)
-        ;rra
+        ;rra 
         rlc a
         ld (pirateValidBitMapMaskTemp),a
-
+        
         ;; update the mask which is the bit we're setting set all others z80
         ;; e.g second pirate is 0x01000000
         ld a, (bitsetMaskPirateTemp)
-        ;rra
+        ;rra 
         rlc a
-        ld (bitsetMaskPirateTemp), a
-
-        ; now move the position to compare (ie a pirate)
+        ld (bitsetMaskPirateTemp), a 
+        
+        ; now move the position to compare (ie a pirate) 
         ld de, -4
         ld hl, (pirateRowLeftPositionTemp)
         add hl, de
         ld (pirateRowLeftPositionTemp), hl
-    pop bc
+    pop bc     
         ld a, b  ; check the loop counter, if it's 3 then move the whole lot down by +33-16
         cp 5
         jr nz, endLoopLabelPriateCheck
         ld de, -149
-
+        
         add hl, de
         ld (pirateRowLeftPositionTemp), hl
-
+        
 endLoopLabelPriateCheck
-
+        
     ;djnz missileCheckHitLoop
     ld a, b
     dec a
@@ -1082,109 +1073,109 @@ endLoopLabelPriateCheck
     cp 0
     jp nz, missileCheckHitLoop
     ret
-
-
-executeRestartLevel
+    
+    
+executeRestartLevel  
     call CLS
     ; draw top line where lives and score go
     ld de, TopLineText
     ld bc, 2
     call printstring
     call printLivesAndScore
-
-    ;; drew player death animation
+           
+    ;; drew player death animation 
     ld hl, playerHitSprite
-    ld (deadPlayerSpritePointer), hl
+    ld (deadPlayerSpritePointer), hl 
     ld b,5
 playerDeathLoop
     push bc
-        ld de, (currentPlayerLocation)
-        ld hl, (deadPlayerSpritePointer)
+        ld de, (currentPlayerLocation)        
+        ld hl, (deadPlayerSpritePointer)        
         push hl
             ld c, 8
-            ld b, 4
+            ld b, 4 
             call drawSprite
-        pop hl
+        pop hl 
         ld de, 32
         add hl, de
         ld (deadPlayerSpritePointer), hl
-
+        
         ld b, 64
-playerDeathDelayLoop
-        push bc
-        ld b, 255
-playerDeathDelayLoop2
-            djnz playerDeathDelayLoop2
-        pop bc
+playerDeathDelayLoop  
+        push bc 
+        ld b, 255                
+playerDeathDelayLoop2                            
+            djnz playerDeathDelayLoop2            
+        pop bc 
         djnz playerDeathDelayLoop
     pop bc
     djnz playerDeathLoop
 
         ld b, 255
-playerDeathDelayLoop3
-        push bc
-        ld b, 255
-playerDeathDelayLoop4
+playerDeathDelayLoop3  
+        push bc 
+        ld b, 255                
+playerDeathDelayLoop4                            
             djnz playerDeathDelayLoop4
-        pop bc
+        pop bc 
         djnz playerDeathDelayLoop3
-
-
+        
+        
     call CLS
     ; draw top line where lives and score go
     ld de, TopLineText
     ld bc, 2
     call printstring
     call printLivesAndScore
-
+    
     ld a, (playerLives)
     dec a
     cp 0
-    jr z, setGameOverFlag
+    jr z, setGameOverFlag    
     ld (playerLives), a
     jr skipGameOverFlagSet
-setGameOverFlag
+setGameOverFlag    
     ld a, 1
     ld (gameOverRestartFlag), a
-    ret
-skipGameOverFlagSet
+    ret 
+skipGameOverFlagSet       
     xor a
     ld a, (MissileInFlightFlag)
-    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things
-
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
+    
     ld a, (missileCountDown)
     ld a, 9
     ld (playerXPos), a
     ld hl, playerSpriteData
-    ld (playerSpritePointer), hl
-    ld hl, Display+1
+    ld (playerSpritePointer), hl 
+    ld hl, Display+1 
     ld de, PLAYER_START_POS
-    add hl, de
+    add hl, de 
     ld (currentPlayerLocation), hl
-
+    
     ld hl, 1
     ld (pirateDirUpdate),hl
     ld a, 5
     ld (pirateXPos),a
-
-
-    ld hl, Display+1
+    
+    
+    ld hl, Display+1 
     ld de, 36
-    add hl, de
+    add hl, de 
     ld (pirateTopLeftPosition), hl
     xor a
     ld (pirateSpriteCycleCount), a
     ;ld hl, pirate3sprites
     ld hl, pirate3sprites4x4
-    ld (pirateSpritesPointer), hl
-    ld hl, 1
+    ld (pirateSpritesPointer), hl 
+    ld hl, 1 
     ld (pirateDirUpdate), hl
     ld a, $ff   ; every pirate is alive
     ;ld a, $01   ; for test only bottom right pirate is alive
-    ;ld a, $80   ; for test only top left pirate is alive
+    ;ld a, $80   ; for test only top left pirate is alive    
     ;ld a, $55   ; for test every other pirate is alive
     ld (pirateValidBitMap), a
-
+    
     xor a
     ld (restartLevelFlag), a
     ld (sharkValid), a
@@ -1198,80 +1189,79 @@ executeNextLevelStart
     ld de, TopLineText
     ld bc, 2
     call printstring
-
+    
     ld a, (gameLevel)
-    inc a
+    inc a 
     daa     ; convert to binary coded decimal to ease the display
     ld (gameLevel), a
-
+    
     ld a, (levelCountDown)
     dec a
     cp 1
     jp z, skipStoreLevelCountDown
     ;; could use this to start end end of level boss for now just hold at zero
     ld (levelCountDown), a
-skipStoreLevelCountDown
+skipStoreLevelCountDown    
 
     xor a
     ld a, (MissileInFlightFlag)
-    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things
-
+    ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things   
+    
     ld a, (missileCountDown)
     ld a, 9
     ld (playerXPos), a
     ld hl, playerSpriteData
-    ld (playerSpritePointer), hl
-    ld hl, Display+1
+    ld (playerSpritePointer), hl 
+    ld hl, Display+1 
     ld de, PLAYER_START_POS
-    add hl, de
+    add hl, de 
     ld (currentPlayerLocation), hl
-
+    
     ld hl, 1
     ld (pirateDirUpdate),hl
     ld a, 5
     ld (pirateXPos),a
-
-
-    ld hl, Display+1
+    
+    
+    ld hl, Display+1 
     ld de, 36
-    add hl, de
+    add hl, de 
     ld (pirateTopLeftPosition), hl
     xor a
     ld (pirateSpriteCycleCount), a
     ;ld hl, pirate3sprites
     ld hl, pirate3sprites4x4
-    ld (pirateSpritesPointer), hl
-    ld hl, 1
+    ld (pirateSpritesPointer), hl 
+    ld hl, 1 
     ld (pirateDirUpdate), hl
     ld a, $ff   ; every pirate is alive
     ;ld a, $01   ; for test only bottom right pirate is alive
-    ;ld a, $80   ; for test only top left pirate is alive
+    ;ld a, $80   ; for test only top left pirate is alive    
     ;ld a, $55   ; for test every other pirate is alive
     ld (pirateValidBitMap), a
-
+    
     xor a
     ld (goNextLevelFlag), a
     ld (sharkValid), a
-    ld (sharkBonusCountUp), a
+    ld (sharkBonusCountUp), a    
     ret
-
+    
 checkForSharkHit
     ret
-
+    
 drawSharkBonus
     xor a
     ld d, a
     ld a, (sharkPosX)
     ld e, a
     ld hl, Display+1
-    add hl, de
+    add hl, de    
     ld de, 33
-    add hl, de
-    ld (sharkAbsoluteScreenPos), hl
-    ex de, hl
+    add hl, de   
+    ex de, hl    
     ld hl, blankSprite
     ld c, 8
-    ld b, 4
+    ld b, 4 
     call drawSprite
 
 
@@ -1279,19 +1269,22 @@ drawSharkBonus
     dec a
     cp 1
     jr z, noDrawSharkAndSetInvalid
-    ld (sharkPosX), a
+    ld (sharkPosX), a 
+
+    
+    
     xor a
     ld d, a
     ld a, (sharkPosX)
     ld e, a
     ld hl, Display+1
-    add hl, de
+    add hl, de    
     ld de, 33
-    add hl, de
+    add hl, de    
     ex de, hl
     ld hl, sharkBonusSprite
     ld c, 8
-    ld b, 4
+    ld b, 4 
     call drawSprite
     jr endDrawSharkBonus
 noDrawSharkAndSetInvalid
@@ -1304,18 +1297,18 @@ noDrawSharkAndSetInvalid
     ld a, (sharkPosX)
     ld e, a
     ld hl, Display+1
-    add hl, de
+    add hl, de    
     ld de, 33
-    add hl, de
+    add hl, de    
     ld hl, blankSprite
     ld c, 8
-    ld b, 4
+    ld b, 4 
     call drawSprite
-
-
-endDrawSharkBonus
+    
+    
+endDrawSharkBonus   
     ret
-
+    
 
 ;;;; sprite code
 ;;;; our sprites are custom 8 by 8 charactor blocks - so will look fairly big (maybe too big)
@@ -1329,29 +1322,29 @@ endDrawSharkBonus
 ;;; de = offset position in screen memory top left of sprite - no limit check done (yet)
 ;;; c  = width of sprite (normally 8 to keep things "simple")
 ;;; b  = rows in sprite (normally 8 to keep things "simple")
-drawSprite
-    push bc
+drawSprite         
+    push bc    
     push de
     ld b, 0               ;; just doing columns in c so zero b
     ldir                  ;; ldir repeats ld (de), (hl) until bc = 0 and increments hl and de
     pop de
-    ex de, hl
+    ex de, hl    
     ld bc, 33             ;; move next write position to next row
     add hl, bc
     ex de, hl
     pop bc
-    djnz drawSprite
+    djnz drawSprite    
     ret
 
 
-;;; work in progrerss currently crashes -
+;;; work in progrerss currently crashes - 
 ;; if this could be made to work then the platforms would appear in blank bits of sprite
 ;; which would made game play better
-drawSprite_OR_BACKGROUND
-    push bc
+drawSprite_OR_BACKGROUND         
+    push bc    
     push de
-
-    ld b, c    ; get column loop counter in b
+    
+    ld b, c    ; get column loop counter in b 
 drawSprite_OR_ColLoop
     ld a, (hl)
     inc hl
@@ -1362,38 +1355,38 @@ drawSprite_OR_ColLoop
     djnz drawSprite_OR_ColLoop
 
     pop de
-    ex de, hl
+    ex de, hl    
     ld bc, 33             ;; move next write position to next row
     add hl, bc
     ex de, hl
     pop bc
-    djnz drawSprite_OR_BACKGROUND
-    ret
-
+    djnz drawSprite_OR_BACKGROUND    
+    ret  
+    
 printLivesAndScore
     ld a, (playerLives)
-    ld de, 29
-    call print_number8bits
-
+    ld de, 29    
+    call print_number8bits        
+    
     ld bc, 11
     ld de, score_mem_tens
     call printNumber
 
     ld bc, 9
     ld de, score_mem_hund
-    call printNumber
-
+    call printNumber     
+       
     ld a, (gameLevel)
     ld de, 20
-    call print_number8bits
-
+    call print_number8bits   
+    
     ret
 
-increaseScore
+increaseScore    
     ld a,(score_mem_tens)				; add one to score, scoring is binary coded decimal (BCD)
-	add a,1
+	add a,1	
 	daa									; z80 daa instruction realigns for BCD after add or subtract
-	ld (score_mem_tens),a
+	ld (score_mem_tens),a	
 	cp 153
 	jr z, addOneToHund
 	jr skipAddHund
@@ -1404,44 +1397,26 @@ addOneToHund
 	add a, 1
 	daa                                   ; z80 daa instruction realigns for BCD after add or subtract
 	ld (score_mem_hund), a
-skipAddHund
+skipAddHund	
 
-; compare with high score and set that if higher
-    ld a, (score_mem_tens)
-    ld b, a
-    ld a, (high_score_tens)
-    cp b
-    jp nc, skipCheckHundredHighScore
-    ld a, (score_mem_tens)
-    ld b,a
-    ld a, (high_score_hund)
-    cp b
-    jp nc, skipCheckHundredHighScore
-    ;; high score is higher
-    ld a, (score_mem_tens)
-    ld (high_score_tens), a
-    ld a, (score_mem_hund)
-    ld (high_score_hund), a
-
-skipCheckHundredHighScore
-    ret
+    ret    
 
 setRandomPirateToShoot
 tryAnotherRCol                          ; generate random number between 0 and 3 inclusive
-    ld a, r
+    ld a, r                             
     and %00000011
-    cp 4
-    jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 4 again
+    cp 4    
+    jp nc, tryAnotherRCol               ; loop when nc flag set ie not less than 4 again    
     inc a                               ; inc guarntees range 1 to 30 for col
-    ld (nextPirateToFireIndex), a
+    ld (nextPirateToFireIndex), a    
     ret
 
-
+      
 ; this prints at to any offset (stored in bc) from the top of the screen Display, using string in de
 printstring
     push de ; preserve de
     ld hl,Display
-    add hl,bc
+    add hl,bc	
 printstring_loop
     ld a,(de)
     cp $ff
@@ -1450,10 +1425,10 @@ printstring_loop
     inc hl
     inc de
     jr printstring_loop
-printstring_end
+printstring_end	
     pop de  ; preserve de
-    ret
-
+    ret  
+    
 print_number16bits    ; bc stores the 16bits, print b then c, de stores offset from Display
     ld a, b
     call print_number8bits
@@ -1463,10 +1438,10 @@ print_number16bits    ; bc stores the 16bits, print b then c, de stores offset f
     call print_number8bits
     ret
 
-
+    
 print_number8bits
-    ld hl, (DF_CC)
-    add hl, de
+    ld hl, (DF_CC)    
+    add hl, de    
     push af ;store the original value of a for later
     and $f0 ; isolate the first digit
     rra
@@ -1479,13 +1454,13 @@ print_number8bits
     pop af ; retrieve original value of a
     and $0f ; isolate the second digit
     add a,$1c ; add 28 to the character code
-    ld (hl), a
-
+    ld (hl), a  
+    
     ret
 
 printNumber
     ld hl,Display
-    add hl,bc
+    add hl,bc	
 printNumber_loop
     ld a,(de)
     push af ;store the original value of a for later
@@ -1500,315 +1475,340 @@ printNumber_loop
     pop af ; retrieve original value of a
     and $0f ; isolate the second digit
     add a,$1c ; add 28 to the character code
-    ld (hl), a
-    ret
-
+    ld (hl), a      
+    ret  
+    
 
 ;check if TV synchro (FRAMES) happend
-vsync
+vsync	
 	ld a,(FRAMES)
 	ld c,a
 sync
 	ld a,(FRAMES)
 	cp c
-	jr z,sync
-endOfVsync
+	jr z,sync   
+endOfVsync        
 	ret
 
-
-                DB $76                        ; Newline
+    
+                DEFB $76                        ; Newline        
 Line1End
-Line2			DB $00,$14
-                DW Line2End-Line2Text
-Line2Text     	DB $F9,$D4                    ; RAND USR
-				DB $1D,$22,$21,$1D,$20        ; 16514
-                DB $7E                        ; Number
-                DB $8F,$01,$04,$00,$00        ; Numeric encoding
-                DB $76                        ; Newline
-Line2End
+Line2			DEFB $00,$14
+                DEFW Line2End-Line2Text
+Line2Text     	DEFB $F9,$D4                    ; RAND USR
+				DEFB $1D,$22,$21,$1D,$20        ; 16514                
+                DEFB $7E                        ; Number
+                DEFB $8F,$01,$04,$00,$00        ; Numeric encoding
+                DEFB $76                        ; Newline
+Line2End            
 endBasic
+                                                                
+Display        	DEFB $76                                                 				
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76                     
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
+                DEFB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76           
 
-Display        	DB $76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
-                DB  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,$76
+Variables: 
 
-Variables
 playerSpriteData
-     DB $00, $00, $81, $00, $00, $81, $04, $00, $00, $06, $85, $00
-     DB $00, $85, $00, $00, $81, $83, $81, $83, $82, $81, $81, $80
-     DB $00, $02, $81, $81, $81, $81, $82, $01, $00, $00, $00, $00
-     DB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-     DB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
-	 DB $00, $00, $00, $00
-missileData
-    ;; small cannon ball
-    DB $00, $00, $00, $00, $00, $81, $86, $00, $00, $84, $07, $00
-	DB $00, $00, $00, $00
-sharkBonusSprite    ; 96 bytes , 8x4 characters times 3 frames
-	DB $00, $00, $87, $80, $00, $00, $00, $87, $83, $07, $80, $80
-	DB $80, $83, $83, $01, $80, $80, $80, $80, $80, $80, $03, $04
-	DB $00, $03, $00, $02, $04, $00, $00, $02, $00, $00, $87, $80
-	DB $00, $00, $00, $87, $83, $07, $80, $80, $80, $83, $83, $07
-	DB $02, $80, $80, $80, $80, $80, $03, $82, $03, $03, $00, $84
-	DB $00, $00, $00, $02, $00, $00, $87, $80, $00, $00, $00, $83
-	DB $83, $80, $80, $80, $80, $83, $83, $05, $81, $80, $80, $80
-	DB $80, $80, $03, $05, $00, $03, $00, $86, $00, $00, $00, $03
-
-
+     ; DEFB   $00, $00, $00, $85, $05, $00, $00, $00, $00, $00, $00, $81, commented out but nice space fighhter ship
+     ; DEFB	$82, $00, $00, $00, $00, $00, $00, $05, $85, $00, $00, $00,
+     ; DEFB	$00, $00, $85, $80, $80, $05, $00, $00, $05, $87, $80, $80,
+     ; DEFB	$80, $80, $04, $85, $82, $80, $80, $82, $81, $80, $80, $81,
+     ; DEFB	$07, $03, $84, $82, $81, $07, $03, $84, $00, $00, $00, $84,
+     ; DEFB	$07, $00, $00, $00     
+    ; the next one is the old 8x8 big sail ship
+    ; DEFB	$00, $00, $00, $00, $81, $04, $00, $00, $00, $00, $00, $06,
+    ; DEFB	$85, $00, $00, $00, $00, $00, $06, $87, $80, $82, $00, $00,
+    ; DEFB	$00, $06, $87, $80, $80, $80, $82, $00, $06, $00, $03, $03,
+    ; DEFB	$84, $00, $87, $83, $03, $82, $07, $03, $03, $03, $84, $80,
+    ; DEFB	$00, $02, $04, $01, $01, $01, $86, $01, $00, $00, $02, $80,
+    ; DEFB	$80, $80, $01, $00   
+    ; this is now 8 by 4
+     DEFB $00, $00, $81, $00, $00, $81, $04, $00, $00, $06, $85, $00,
+     DEFB $00, $85, $00, $00, $81, $83, $81, $83, $82, $81, $81, $80,
+     DEFB $00, $02, $81, $81, $81, $81, $82, $01, $00, $00, $00, $00,
+     DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+     DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	 DEFB $00, $00, $00, $00
+    
+missileData    
+    ;; small cannon ball 
+    DEFB $00, $00, $00, $00, $00, $81, $86, $00, $00, $84, $07, $00,
+	DEFB $00, $00, $00, $00
+     ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $00, $00, $00, $00, $87, $04, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $02, $01, $00, $00, $00, $00, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $00, $00, $00, $00, $85, $05, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+     ;DEFB	$00, $00, $00, $00     
+	
+	;DEFB $00, $87, $04, $00, $00, $02, $01, $00, $00, $00, $00, $00,
+	;DEFB $00, $85, $05, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	;DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00,
+	;DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00     
+    
+    ;; big cannon ball
+    ;DEFB $00, $81, $86, $00, $81, $80, $82, $86, $84, $80, $07, $06,
+	;DEFB $00, $84, $06, $00
+sharkBonusSprite    ; 96 bytes , 8x4 characters times 3 frames    
+	DEFB $00, $00, $87, $80, $00, $00, $00, $87, $83, $07, $80, $80,
+	DEFB $80, $83, $83, $01, $80, $80, $80, $80, $80, $80, $03, $04,
+	DEFB $00, $03, $00, $02, $04, $00, $00, $02, $00, $00, $87, $80,
+	DEFB $00, $00, $00, $87, $83, $07, $80, $80, $80, $83, $83, $07,
+	DEFB $02, $80, $80, $80, $80, $80, $03, $82, $03, $03, $00, $84,
+	DEFB $00, $00, $00, $02, $00, $00, $87, $80, $00, $00, $00, $83,
+	DEFB $83, $80, $80, $80, $80, $83, $83, $05, $81, $80, $80, $80,
+	DEFB $80, $80, $03, $05, $00, $03, $00, $86, $00, $00, $00, $03    
+    
+     
 explsion4x4     ;4x4 and 5 frames total of animation (80bytes)
-	DB $87, $87, $01, $04, $04, $04, $87, $87, $00, $06, $86, $00
-	DB $87, $05, $02, $00, $01, $00, $02, $02, $04, $04, $00, $86
-	DB $87, $00, $87, $00, $87, $01, $00, $01, $00, $85, $05, $00
-	DB $85, $80, $80, $05, $00, $85, $05, $00, $00, $85, $05, $00
-	DB $00, $85, $05, $00, $85, $80, $80, $05, $00, $85, $05, $00
-	DB $00, $85, $05, $00, $00, $85, $05, $00, $85, $80, $80, $05
-	DB $00, $85, $05, $00, $00, $85, $05, $00
-jollyRoger
-     DB	$87, $03, $00, $00, $00, $00, $03, $04, $05, $86, $00, $83
-     DB	$83, $00, $06, $85, $00, $00, $06, $04, $87, $86, $00, $00
-     DB	$00, $00, $05, $87, $04, $85, $00, $00, $00, $00, $02, $83
-     DB	$83, $01, $00, $00, $00, $00, $04, $07, $84, $87, $00, $00
-     DB	$05, $06, $00, $01, $02, $00, $86, $85, $02, $83, $00, $00
-     DB	$00, $00, $83, $01
-
+	DEFB $87, $87, $01, $04, $04, $04, $87, $87, $00, $06, $86, $00,
+	DEFB $87, $05, $02, $00, $01, $00, $02, $02, $04, $04, $00, $86,
+	DEFB $87, $00, $87, $00, $87, $01, $00, $01, $00, $85, $05, $00,
+	DEFB $85, $80, $80, $05, $00, $85, $05, $00, $00, $85, $05, $00,
+	DEFB $00, $85, $05, $00, $85, $80, $80, $05, $00, $85, $05, $00,
+	DEFB $00, $85, $05, $00, $00, $85, $05, $00, $85, $80, $80, $05,
+	DEFB $00, $85, $05, $00, $00, $85, $05, $00
+jollyRoger     
+     DEFB	$87, $03, $00, $00, $00, $00, $03, $04, $05, $86, $00, $83,
+     DEFB	$83, $00, $06, $85, $00, $00, $06, $04, $87, $86, $00, $00,
+     DEFB	$00, $00, $05, $87, $04, $85, $00, $00, $00, $00, $02, $83,
+     DEFB	$83, $01, $00, $00, $00, $00, $04, $07, $84, $87, $00, $00,
+     DEFB	$05, $06, $00, $01, $02, $00, $86, $85, $02, $83, $00, $00,
+     DEFB	$00, $00, $83, $01     
+     
 playerHitSprite        ; 16x8 "pixels" 8x4 characters (bytes) times 4 frames animation
-    DB $04, $04, $83, $02, $87, $02, $00, $02, $04, $00, $87, $00
-    DB $00, $01, $02, $00, $87, $87, $02, $87, $05, $06, $81, $86
-    DB $00, $02, $81, $81, $81, $81, $82, $01, $01, $01, $04, $02
-    DB $00, $00, $00, $87, $04, $87, $00, $00, $00, $01, $87, $00
-    DB $87, $87, $00, $00, $00, $00, $00, $00, $00, $00, $06, $00
-    DB $00, $01, $00, $87, $00, $01, $00, $01, $00, $87, $00, $87
-    DB $00, $00, $00, $00, $00, $00, $00, $00, $04, $00, $00, $00
-    DB $00, $00, $00, $02, $00, $00, $00, $00, $00, $00, $00, $00
-    DB $07, $84, $85, $03, $04, $07, $86, $85, $05, $85, $85, $00
-    DB $05, $05, $85, $85, $07, $84, $85, $03, $04, $07, $86, $02
-    DB $01, $02, $02, $00, $01, $01, $02, $02, $00, $80, $00, $00
-    DB $00, $85, $05, $00, $00, $00, $85, $84, $84, $00, $00, $00
-    DB $00, $00, $06, $82, $07, $04, $00, $00, $00, $80, $00, $01
-	DB $01, $85, $05, $00
-
+    DEFB $04, $04, $83, $02, $87, $02, $00, $02, $04, $00, $87, $00,
+    DEFB $00, $01, $02, $00, $87, $87, $02, $87, $05, $06, $81, $86,
+    DEFB $00, $02, $81, $81, $81, $81, $82, $01, $01, $01, $04, $02,
+    DEFB $00, $00, $00, $87, $04, $87, $00, $00, $00, $01, $87, $00,
+    DEFB $87, $87, $00, $00, $00, $00, $00, $00, $00, $00, $06, $00,
+    DEFB $00, $01, $00, $87, $00, $01, $00, $01, $00, $87, $00, $87,
+    DEFB $00, $00, $00, $00, $00, $00, $00, $00, $04, $00, $00, $00,
+    DEFB $00, $00, $00, $02, $00, $00, $00, $00, $00, $00, $00, $00,
+    DEFB $07, $84, $85, $03, $04, $07, $86, $85, $05, $85, $85, $00,
+    DEFB $05, $05, $85, $85, $07, $84, $85, $03, $04, $07, $86, $02,
+    DEFB $01, $02, $02, $00, $01, $01, $02, $02, $00, $80, $00, $00,
+    DEFB $00, $85, $05, $00, $00, $00, $85, $84, $84, $00, $00, $00,
+    DEFB $00, $00, $06, $82, $07, $04, $00, $00, $00, $80, $00, $01,
+	DEFB $01, $85, $05, $00
+  
 pirate3sprites     ;; these are 4 by 8 bytes and is 3 in the animation = 96bytes
-    DB $00, $84, $07, $85, $87, $81, $82, $06, $05, $80, $80, $00
-    DB $01, $07, $84, $00, $87, $05, $85, $00, $00, $00, $02, $00
-    DB $00, $00, $00, $00, $00, $00, $00, $00, $00, $84, $07, $00
-    DB $87, $81, $82, $04, $05, $80, $80, $85, $01, $07, $84, $02
-    DB $00, $05, $85, $00, $02, $01, $02, $00, $00, $00, $00, $00
-    DB $00, $00, $00, $00, $05, $84, $07, $00, $86, $81, $82, $04
-	DB $00, $80, $80, $85, $00, $07, $84, $02, $00, $05, $85, $00
-	DB $02, $01, $02, $00, $00, $00, $00, $00, $00, $00, $00, $00
+    DEFB $00, $84, $07, $85, $87, $81, $82, $06, $05, $80, $80, $00,
+    DEFB $01, $07, $84, $00, $87, $05, $85, $00, $00, $00, $02, $00,
+    DEFB $00, $00, $00, $00, $00, $00, $00, $00, $00, $84, $07, $00,
+    DEFB $87, $81, $82, $04, $05, $80, $80, $85, $01, $07, $84, $02,
+    DEFB $00, $05, $85, $00, $02, $01, $02, $00, $00, $00, $00, $00,
+    DEFB $00, $00, $00, $00, $05, $84, $07, $00, $86, $81, $82, $04,
+	DEFB $00, $80, $80, $85, $00, $07, $84, $02, $00, $05, $85, $00,
+	DEFB $02, $01, $02, $00, $00, $00, $00, $00, $00, $00, $00, $00
 pirate3sprites4x4       ; these are 16 bytes each 4 by 4)
-	DB $05, $85, $05, $00, $02, $80, $80, $86, $00, $07, $84, $02
-	DB $87, $05, $85, $00, $04, $85, $05, $00, $02, $80, $80, $84
-	DB $00, $07, $84, $00, $02, $01, $85, $00, $00, $85, $05, $87
-	DB $06, $80, $80, $01, $01, $07, $84, $00, $87, $05, $85, $00
-
-; used to clear current location before move
+	DEFB $05, $85, $05, $00, $02, $80, $80, $86, $00, $07, $84, $02,
+	DEFB $87, $05, $85, $00, $04, $85, $05, $00, $02, $80, $80, $84,
+	DEFB $00, $07, $84, $00, $02, $01, $85, $00, $00, $85, $05, $87,
+	DEFB $06, $80, $80, $01, $01, $07, $84, $00, $87, $05, $85, $00
+    
+; used to clear current location before move    
 blankSprite
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   0,  0,  0,  0,  0,  0,  0,  0
-    DB   8,  8,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0    
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0
+    DEFB   0,  0,  0,  0,  0,  0,  0,  0      
+    DEFB   8,  8,  0,  0,  0,  0,  0,  0      
 blockFilled    ;8*10
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
-    DB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8     
+    DEFB   8,  8,  8,  8,  8,  8,  8,  8    
 
 pirateValidBitMap ;we've fixed on 4x2 grid of pirates so thats 8 bits to store if they are dead or not
-    DB 0
+    DEFB 0    
 nextPirateToFireIndex
-    DB 0
-pirateFiringFlag
-    DB 0
+    DEFB 0
+pirateFiringFlag    
+    DEFB 0
 playerXPos
-    DB 0
+    DEFB 0
 evenOddLoopFlag
-    DB 0
-evenOddLoopCount
-    DB 0
-enemySpriteZeroPos_ST
-    DW 0
-enemySpriteOnePos_ST
-    DW 0
+    DEFB 0
+evenOddLoopCount    
+    DEFB 0
+enemySpriteZeroPos_ST  
+    DEFW 0
+enemySpriteOnePos_ST    
+    DEFW 0
 enemySpriteZeroPos_END
-    DW 0
-enemySpriteOnePos_END
-    DW 0
+    DEFW 0
+enemySpriteOnePos_END   
+    DEFW 0
 enemySpriteZeroPos_DIR
-    DW 0
-enemySpriteOnePos_DIR
-    DW 0
+    DEFW 0
+enemySpriteOnePos_DIR  
+    DEFW 0
 enemySpriteZeroPos_CUR
-    DW 0
+    DEFW 0
 enemySpriteOnePos_CUR
-    DW 0
+    DEFW 0
 enemySpriteZeroPos_RATE
-    DB 0
+    DEFB 0
 enemySpriteOnePos_RATE
-    DB 0
+    DEFB 0    
 TEMP_enemySpritePointer
-    DW 0
+    DEFW 0
 TEMP_enemySpritePos_CUR
-    DW 0
+    DEFW 0
 enemySpriteZero_HorizVert
-    DB 0
-enemySpriteOne_HorizVert
-    DB 0
+    DEFB 0
+enemySpriteOne_HorizVert    
+    DEFB 0
 TEMP_enemySpriteFrame
-    DB 0
+    DEFB 0
 enemySpriteFrameZero
-    DB 0
-enemySpriteFrameOne
-    DB 0
+    DEFB 0
+enemySpriteFrameOne    
+    DEFB 0
 enemySprites   ;; keeping these to 4*4 for speed and size
 enemySprite4by4BlankPointer
-    DW 0
-YSpeed
-    DB 0
-currentPlayerLocation
-    DW 0
+    DEFW 0
+YSpeed   
+    DEFB 0
+currentPlayerLocation 
+    DEFW 0
 MissileInFlightFlag
-    DB 0
+    DEFB 0
 missileCountDown
-    DB 0
-currentMissilePosition
-    DW 0
+    DEFB 0
+currentMissilePosition    
+    DEFW 0
 levelCountDown
-    DB 0
+    DEFB 0
 gameLevel
-    DB 0
+    DEFB 0
 restartLevelFlag
-    DB 0
+    DEFB 0
 enemySprite5by8Blank
-    DB 0, 0, 0 ,0, 0
-    DB 0, 0, 0 ,0, 0
-    DB 0, 0, 0 ,0, 0
-    DB 0, 0, 0 ,0, 0
-    DB 0, 0, 0 ,0, 0
-    DB 0, 0, 0 ,0, 0
-    DB 0, 0, 0 ,0, 0
-    DB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0 
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0
+    DEFB 0, 0, 0 ,0, 0    
 
 sharkPosX
-    DB 0
-sharkAbsoluteScreenPos
-    DW 0
+    DEFB 0
 sharkValid
-    DB 0
+    DEFB 0    
 sharkBonusCountUp
-    DB 0
+    DEFB 0
 deadPlayerSpritePointer
-    DW 0
+    DEFW 0   
 playerSpritePointer
-    DW 0
+    DEFW 0 
 pirateTopLeftPosition
-    DW 0
+    DEFW 0 
 pirateRowLeftPositionTemp
-    DW 0
+    DEFW 0     
 pirateValidBitMapMaskTemp
-    DB 0
+    DEFB 0
 bitsetMaskPirateTemp
-    DB 0
-pirateSpriteCycleCount
-    DB 0
+    DEFB 0
+pirateSpriteCycleCount    
+    DEFB 0
 pirateSpritesPointer
-    DW 0
+    DEFW 0
 pirateDirUpdate
-    DW 1
+    DEFW 1
 pirateXPos
-    DB 0
+    DEFB 0    
 playerLives
-    DB 0
+    DEFB 0    
 score_mem_tens
-    DB 0
+    DEFB 0
 score_mem_hund
-    DB 0
-high_score_tens
-    DB 0
-high_score_hund
-    DB 0
+    DEFB 0
 last_score_mem_tens
-    DB 0
+    DEFB 0
 last_score_mem_hund
-    DB 0
+    DEFB 0       
 jollyRogerDirUpdate
-    DW 1
+    DEFW 1
 jollyRogerXPos
-    DB 0
+    DEFB 0
 jollyRogerLocation
-    DW 0
-previousJollyRogerLocation
-    DW 0
-gameOverRestartFlag
-    DB 0
+    DEFW 0
+previousJollyRogerLocation    
+    DEFW 0
+gameOverRestartFlag    
+    DEFB 0    
 goNextLevelFlag
-    DB 0
-
+    DEFB 0
+    
 LivesText
-    DB _L,_I,_V,_E,_S,_EQ,$ff
+    DEFB _L,_I,_V,_E,_S,_EQ,$ff    
 TopLineText
-    DB _S,_C,_O,_R,_E,_CL,__,__,__,__,__,__,__,_L,_E,_V,_E,_L,_CL,__,__,__,_L,_I,_V,_E,_S,_CL,__,__,__,$ff
+    DEFB _S,_C,_O,_R,_E,_CL,__,__,__,__,__,__,__,_L,_E,_V,_E,_L,_CL,__,__,__,_L,_I,_V,_E,_S,_CL,__,__,__,$ff
 
 title_screen_txt
-	DB	_Z,_X,_8,_1,__,_P,_I,_R,_A,_T,_E,__,_I,_N,_V,_A,_D,_E,_R,_S,$ff
+	DEFB	_Z,_X,_8,_1,__,_P,_I,_R,_A,_T,_E,__,_I,_N,_V,_A,_D,_E,_R,_S,$ff
 keys_screen_txt_1
-	DB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,_P,__,_R,_I,_G,_H,_T,$ff
+	DEFB	_S,__,_T,_O,__,_S,_T,_A,_R,_T,26,__,_O,__,_L,_E,_F,_T,26,_P,__,_R,_I,_G,_H,_T,$ff
 keys_screen_txt_2
-	DB	__,__,__,__,__,__,__,_Z,__,_O,_R,__,_S,_P,_A,_C,_E,__,_EQ,__,_F,_I,_R,_E,$ff
+	DEFB	__,__,__,__,__,__,__,_Z,__,_O,_R,__,_S,_P,_A,_C,_E,__,_EQ,__,_F,_I,_R,_E,,$ff    
 
 game_objective_txt
-	DB	_T,_O,__,_W,_I,_N,__,_S,_U,_R,_V,_I,_V,_E,__, _A,_L,_L,__,_P,_I,_R,_A,_T,_E,_S,$ff
+	DEFB	_T,_O,__,_W,_I,_N,__,_S,_U,_R,_V,_I,_V,_E,__, _A,_L,_L,__,_P,_I,_R,_A,_T,_E,_S,$ff
 game_objective_boarder   ; I know a bit wasteful but we have a whole 16K!
-	DB	137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,$ff
-
+	DEFB	137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,137,$ff
+		
 last_Score_txt
-	DB 21,21,21,21,_L,_A,_S,_T,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff
+	DEFB 21,21,21,21,_L,_A,_S,_T,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff	
 high_Score_txt
-	DB 21,21,21,21,_H,_I,_G,_H,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff
+	DEFB 21,21,21,21,_H,_I,_G,_H,__,__,_S,_C,_O,_R,_E,21,21,21,21,$ff		
 credits_and_version_1
-	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
+	DEFB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_2,$ff
+	DEFB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_0,$ff    
 credits_and_version_3
-	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
-
-
-VariablesEnd:   DB $80
-BasicEnd:
-
+	DEFB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff       
+    
+   
+VariablesEnd:   DEFB $80
+BasicEnd: 
+#END
 

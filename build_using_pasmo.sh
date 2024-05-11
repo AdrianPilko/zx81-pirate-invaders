@@ -1,4 +1,4 @@
 #!/bin/sh
 
-pasmo -v pivaders_pasmo.asm pivaders.p
+pasmo -v pivaders.asm pivaders.p
 
