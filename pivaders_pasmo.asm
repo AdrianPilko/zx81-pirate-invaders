@@ -23,7 +23,10 @@
 ;;; https://youtube.com/@byteforever7829
 
 ;;; Known bug(s)
-;;;
+;;; 1) sometimes the pirates don't move for a short time, either on level restart or new level.
+;;;    after a delay they start moving again. The rest of the gaem loop appears to be working
+;;;    correctly as you can still move left right and fire (and hit) the pirates?????
+;;  2) the high score doesn't register properly for number >= 100
 
 
 ;some #defines for compatibility with other assemblers
@@ -207,14 +210,13 @@ intro_title
 
     xor a
     ld (gameOverRestartFlag), a
-
-    ld a, (score_mem_tens)
     ld (last_score_mem_tens),a
-    ld a, (score_mem_hund)
     ld (last_score_mem_hund),a
     ld (sharkPosX), a
     ld (sharkValid), a
     ld (sharkBonusCountUp), a
+    ld (score_mem_hund),a
+    ld (score_mem_tens),a
 
 	ld bc,6
 	ld de,title_screen_txt
@@ -246,14 +248,16 @@ intro_title
 	call printstring
 
 	ld bc,436
-	ld de,last_Score_txt
+	ld de,high_Score_txt
 	call printstring
 
     ld bc, 476
-    ld de, last_score_mem_hund ; load address of hundreds
+    ;ld de, last_score_mem_hund ; load address of hundreds
+    ld de, high_score_hund
 	call printNumber
 	ld bc, 478			; bc is offset from start of display
-	ld de, last_score_mem_tens ; load address of  tens
+	;ld de, last_score_mem_tens ; load address of  tens
+	ld de, high_score_tens
 	call printNumber
 	ld bc,537
 	ld de,credits_and_version_1
@@ -943,7 +947,7 @@ checkIfMissileHit
     ; shark hit
     xor a
     ld (sharkValid), a
-    ld b, 100
+    ld b, 10
 increaseScoreSharkHitLoop
     push bc
     call increaseScore
@@ -1402,6 +1406,24 @@ addOneToHund
 	ld (score_mem_hund), a
 skipAddHund
 
+; compare with high score and set that if higher
+    ld a, (score_mem_tens)
+    ld b, a
+    ld a, (high_score_tens)
+    cp b
+    jp nc, skipCheckHundredHighScore
+    ld a, (score_mem_tens)
+    ld b,a
+    ld a, (high_score_hund)
+    cp b
+    jp nc, skipCheckHundredHighScore
+    ;; high score is higher
+    ld a, (score_mem_tens)
+    ld (high_score_tens), a
+    ld a, (score_mem_hund)
+    ld (high_score_hund), a
+
+skipCheckHundredHighScore
     ret
 
 setRandomPirateToShoot
@@ -1736,6 +1758,10 @@ score_mem_tens
     DB 0
 score_mem_hund
     DB 0
+high_score_tens
+    DB 0
+high_score_hund
+    DB 0
 last_score_mem_tens
     DB 0
 last_score_mem_hund
@@ -1777,7 +1803,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_2$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_2,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 
