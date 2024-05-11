@@ -416,10 +416,14 @@ continueWithGameLoop
     jp z, intro_title
 
 
+    ld a, (evenOddLoopFlag)
+    cp 0
+    jr z, skipSharkInGameLoop
+
     ld a, (sharkValid)
     cp 1
     call z, drawSharkBonus
-
+skipSharkInGameLoop
     call setRandomPirateToShoot   ; this sets nextPirateToFireIndex
 
     call drawMainInvaderGrid
@@ -925,13 +929,17 @@ checkIfMissileHit
 ;;;; check if missile hit the shark, if the shark is valid
     ld a, (sharkValid)
     cp 0
-    jr z, skipCheckSharkHit 
+    jr z, skipCheckSharkHit
     ld de, (currentMissilePosition)
-    ld hl, Display+1
+    ld hl, (sharkAbsoluteScreenPos)
     sbc hl, de
-    ld a, (sharkPosX)
-    cp l
+    ld a, h
+    cp 0
     jp nz, skipCheckSharkHit
+    ld a, l
+    cp 0
+    jp nz, skipCheckSharkHit
+
     ; shark hit
     xor a
     ld (sharkValid), a
@@ -941,7 +949,7 @@ increaseScoreSharkHitLoop
     call increaseScore
     pop bc
     djnz increaseScoreSharkHitLoop
-     
+
 
 skipCheckSharkHit
 
@@ -1255,6 +1263,7 @@ drawSharkBonus
     add hl, de
     ld de, 33
     add hl, de
+    ld (sharkAbsoluteScreenPos), hl
     ex de, hl
     ld hl, blankSprite
     ld c, 8
@@ -1267,9 +1276,6 @@ drawSharkBonus
     cp 1
     jr z, noDrawSharkAndSetInvalid
     ld (sharkPosX), a
-
-
-
     xor a
     ld d, a
     ld a, (sharkPosX)
@@ -1698,6 +1704,8 @@ enemySprite5by8Blank
 
 sharkPosX
     DB 0
+sharkAbsoluteScreenPos
+    DW 0
 sharkValid
     DB 0
 sharkBonusCountUp
@@ -1769,7 +1777,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_0,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_2$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 
