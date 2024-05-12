@@ -30,10 +30,10 @@
 ;;; 3) untested - what happens when the level goes past 8 (the fastest left rights pirate movement)
 ;;;
 ;;; Potential Improvements (+extra features)
-;;; 1) If the pirates second row reaches the players mid ship then the player loses 
-;;;    a life even if that last row was all shot, improve but making it possible to 
+;;; 1) If the pirates second row reaches the players mid ship then the player loses
+;;;    a life even if that last row was all shot, improve but making it possible to
 ;;;    only die if the bottom row is shot and the top row pirates moved down to players ship
-;;; 2) When both rows of pirates are shot on left or right edges then the whole remaining 
+;;; 2) When both rows of pirates are shot on left or right edges then the whole remaining
 ;;;    "block" of pirates should be able to move to the screen limits not just carry on as if
 ;;;    the edge pirates were still extant.
 ;;; 3) pirates should be able to fire back down
@@ -67,6 +67,9 @@ SCREEN_HEIGHT EQU 23   ; we can use the full screen becuase we're not using PRIN
 MISSILE_COUNTDOWN_INIT EQU 18
 ;#define PLAYER_START_POS 604
 PLAYER_START_POS EQU 637
+PLAYER_LIVES EQU 3
+;PIRATE_START_POS EQU 366
+PIRATE_START_POS EQU 36
 
 
 VSYNCLOOP       EQU      2
@@ -221,8 +224,12 @@ intro_title
     ld (sharkPosX), a
     ld (sharkValid), a
     ld (sharkBonusCountUp), a
-    ld (score_mem_hund),a
+
+    ld a, $00
     ld (score_mem_tens),a
+    ld a, $00
+    ld (score_mem_hund),a
+
 
 	ld bc,6
 	ld de,title_screen_txt
@@ -341,7 +348,7 @@ initVariables
     ld a, 5
     ld (pirateXPos),a
 
-    ld a, 3
+    ld a, PLAYER_LIVES
     ld (playerLives), a
 
     ld a, 8
@@ -361,11 +368,7 @@ initVariables
 
 
     ld hl, Display+1
-IF DEFINED DEBUG_START_PIRATES_LOWER
-    ld de, 366
-ELSE
-    ld de, 36
-ENDIF
+    ld de, PIRATE_START_POS
     add hl, de
     ld (pirateTopLeftPosition), hl
     xor a
@@ -1175,7 +1178,7 @@ skipGameOverFlagSet
 
 
     ld hl, Display+1
-    ld de, 36
+    ld de, PIRATE_START_POS
     add hl, de
     ld (pirateTopLeftPosition), hl
     xor a
@@ -1239,7 +1242,7 @@ skipStoreLevelCountDown
 
 
     ld hl, Display+1
-    ld de, 36
+    ld de, PIRATE_START_POS
     add hl, de
     ld (pirateTopLeftPosition), hl
     xor a
@@ -1413,23 +1416,50 @@ addOneToHund
 skipAddHund
 
 ; compare with high score and set that if higher
+
+    ld a, (score_mem_hund)
+    ld b,a     ; load the second 8-bit number into register b (via a)
+    ld a, (high_score_hund)   ; load the first 8-bit number into register a
+    cp b            ; compare a with the second 8-bit number (in register b)
+    jr c, highScoreHundIsLess ; jump if carry flag is set (a < b)
+
+    ; if we reach here, it means high_score_hund >= score_mem_hund
+
+    ; check if equal, and if so then check the tens
+    jr z, highScoreHundEqualCheckTens
+
+    jr skipCheckRestHighScore
+
+highScoreHundEqualCheckTens
     ld a, (score_mem_tens)
     ld b, a
     ld a, (high_score_tens)
     cp b
-    jp nc, skipCheckHundredHighScore
-    ld a, (score_mem_tens)
-    ld b,a
-    ld a, (high_score_hund)
-    cp b
-    jp nc, skipCheckHundredHighScore
-    ;; high score is higher
+    jp nc, skipCheckRestHighScore
+
     ld a, (score_mem_tens)
     ld (high_score_tens), a
     ld a, (score_mem_hund)
     ld (high_score_hund), a
+    jr skipCheckRestHighScore
 
-skipCheckHundredHighScore
+highScoreHundIsLess
+    ;if we reach here it means (high_score_hund <= score_mem_hund)
+    ;check the tens
+    ld a, (score_mem_tens)
+    ld b, a
+    ld a, (high_score_tens)
+    cp b
+    jp nc, skipCheckRestHighScore
+
+    ;if we reach here it means (high_score_hund <= score_mem_hund) AND (high_score_tens <= score_mem_tens)
+    ld a, (score_mem_tens)
+    ld (high_score_tens), a
+    ld a, (score_mem_hund)
+    ld (high_score_hund), a
+    ;jr skipCheckRestHighScore not needed
+
+skipCheckRestHighScore
     ret
 
 setRandomPirateToShoot
