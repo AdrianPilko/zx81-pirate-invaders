@@ -26,7 +26,7 @@
 ;;; 1) sometimes the pirates don't move for a short time, either on level restart or new level.
 ;;;    after a delay they start moving again. The rest of the gaem loop appears to be working
 ;;;    correctly as you can still move left right and fire (and hit) the pirates?????
-;;; 2) the high score doesn't register properly for number >= 100
+;;; 2) the high score doesn't register properly for number >= 100  FIXED
 ;;; 3) untested - what happens when the level goes past 8 (the fastest left rights pirate movement)
 ;;;
 ;;; Potential Improvements (+extra features)
@@ -225,9 +225,10 @@ intro_title
     ld (sharkValid), a
     ld (sharkBonusCountUp), a
 
-    ld a, $00
+    ;ld a, $00
+    xor a
     ld (score_mem_tens),a
-    ld a, $00
+    ;ld a, $00
     ld (score_mem_hund),a
 
 
@@ -1421,13 +1422,11 @@ skipAddHund
     ld b,a     ; load the second 8-bit number into register b (via a)
     ld a, (high_score_hund)   ; load the first 8-bit number into register a
     cp b            ; compare a with the second 8-bit number (in register b)
-    jr c, highScoreHundIsLess ; jump if carry flag is set (a < b)
+    jr c, setHighScore ; jump if carry flag is set (high_score_hund < score_mem_hund)
 
-    ; if we reach here, it means high_score_hund >= score_mem_hund
-
-    ; check if equal, and if so then check the tens
+    ; check if equal, and if so then check the tens, could be 00 50, or 01 50 in high score and current score
     jr z, highScoreHundEqualCheckTens
-
+    ; high_score_hund > score_mem_hund   so don't set
     jr skipCheckRestHighScore
 
 highScoreHundEqualCheckTens
@@ -1435,29 +1434,16 @@ highScoreHundEqualCheckTens
     ld b, a
     ld a, (high_score_tens)
     cp b
-    jp nc, skipCheckRestHighScore
+    jp c, setHighScore ; jump if carry flag is set (a < b)
 
+    jr skipCheckRestHighScore
+
+setHighScore
     ld a, (score_mem_tens)
     ld (high_score_tens), a
     ld a, (score_mem_hund)
     ld (high_score_hund), a
     jr skipCheckRestHighScore
-
-highScoreHundIsLess
-    ;if we reach here it means (high_score_hund <= score_mem_hund)
-    ;check the tens
-    ld a, (score_mem_tens)
-    ld b, a
-    ld a, (high_score_tens)
-    cp b
-    jp nc, skipCheckRestHighScore
-
-    ;if we reach here it means (high_score_hund <= score_mem_hund) AND (high_score_tens <= score_mem_tens)
-    ld a, (score_mem_tens)
-    ld (high_score_tens), a
-    ld a, (score_mem_hund)
-    ld (high_score_hund), a
-    ;jr skipCheckRestHighScore not needed
 
 skipCheckRestHighScore
     ret
