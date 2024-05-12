@@ -28,7 +28,8 @@
 ;;;    correctly as you can still move left right and fire (and hit) the pirates?????
 ;;; 2) the high score doesn't register properly for number >= 100  FIXED
 ;;; 3) untested - what happens when the level goes past 8 (the fastest left rights pirate movement)
-;;;
+;;; 4) if you are shooting then die and game over that next game you immediately lose a live
+
 ;;; Potential Improvements (+extra features)
 ;;; 1) If the pirates second row reaches the players mid ship then the player loses
 ;;;    a life even if that last row was all shot, improve but making it possible to
