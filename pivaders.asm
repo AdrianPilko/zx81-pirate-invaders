@@ -219,6 +219,8 @@ intro_title
 
 
     xor a
+    ld (goNextLevelFlag),a
+    ld (restartLevelFlag),a
     ld (gameOverRestartFlag), a
     ld (last_score_mem_tens),a
     ld (last_score_mem_hund),a
