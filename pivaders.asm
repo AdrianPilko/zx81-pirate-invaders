@@ -315,6 +315,8 @@ preinit
     call CLS
 
 initVariables
+    ld a, 0
+    ld (bossLevelFlag), a
 
     ; draw top line where lives and score go
     ld de, TopLineText
@@ -336,14 +338,8 @@ initVariables
     ld de, PLAYER_START_POS
     add hl, de
     ld (currentPlayerLocation), hl
-    ld hl, Display+1
-    ld de, 6
-    add hl, de
-    ld (jollyRogerLocation), hl
-    ld hl, 1
-    ld (jollyRogerDirUpdate),hl
-    ld a, 5
-    ld (jollyRogerXPos),a
+    call resetJollyRogerPos
+
 
     ld hl, 1
     ld (pirateDirUpdate),hl
@@ -353,7 +349,7 @@ initVariables
     ld a, PLAYER_LIVES
     ld (playerLives), a
 
-    ld a, 8
+    ld a, 4
     ld (levelCountDown), a
 
     ld a, $01
@@ -397,15 +393,6 @@ waitForTVSync
 	call vsync
 	djnz waitForTVSync
 
-    ld a, (goNextLevelFlag)
-    cp 1
-    call z, executeNextLevelStart
-
-    ld a, (restartLevelFlag)
-    cp 1
-    call z, executeRestartLevel
-
-
     ld a, (levelCountDown)
     ld b, a
     ld a, (evenOddLoopCount)
@@ -426,6 +413,16 @@ resetEvenOddAndSetFlag
 continueWithGameLoop
 
 
+    ld a, (goNextLevelFlag)
+    cp 1
+    call z, executeNextLevelStart
+
+    ld a, (restartLevelFlag)
+    cp 1
+    call z, executeRestartLevel
+
+
+
     ld a, (gameOverRestartFlag)
     cp 1
     jp z, intro_title
@@ -441,7 +438,9 @@ continueWithGameLoop
 skipSharkInGameLoop
     call setRandomPirateToShoot   ; this sets nextPirateToFireIndex
 
-    call drawMainInvaderGrid
+    ld a, (bossLevelFlag)
+    cp 0
+    call z, drawMainInvaderGrid
 
     call pirateFire   ; this will use and nextPirateToFireIndex also check pirateFiringFlag
 
@@ -452,13 +451,24 @@ skipSharkInGameLoop
     ld b, 4
     call drawSprite
 
-    ; ld hl, blankSprite
-    ; ld de, (previousJollyRogerLocation)
-    ; ld c, 8
-    ; ld b, 8
-    ; call drawSprite
-    ; call updateJollyRoger
 
+    ld a, (bossLevelFlag)
+    cp 0
+    jp z, noJollyRogerDraw
+    ld hl, blankSprite
+    ld de, (previousJollyRogerLocation)
+    ld c, 8
+    ld b, 8
+    call drawSprite
+
+    call updateJollyRoger
+    ld hl, jollyRoger
+    ld de, (jollyRogerLocation)
+    ld c, 8
+    ld b, 8
+    call drawSprite
+
+noJollyRogerDraw
 
 
 
@@ -644,10 +654,6 @@ noMissileUpdate
 
 
 updatePirateXPos
-IF DEFINED  DEBUG_NO_MOVE_PIRATE
-    ret
-ENDIF
-
     ld a, (pirateXPos)
     cp 14
     jr z, reversePirateDirToNeg
@@ -725,11 +731,11 @@ reversePirateDirToPos
     jr endOfUpdatePirateXPos
 
 endOfUpdatePirateXPos
-IF DEFINED DEBUG_PIRATE_DIR
-    ld a,(pirateXPos)
-    ld de, 1
-    call print_number8bits
-ENDIF
+;IF DEFINED DEBUG_PIRATE_DIR
+;    ld a,(pirateXPos)
+;    ld de, 760
+;    call print_number8bits
+;ENDIF
     ld hl, (pirateTopLeftPosition)
     ;ld (previousPirateLocation), hl
     ld de, (pirateDirUpdate)
@@ -755,7 +761,40 @@ updateJollyRoger
 reverseDirToNeg
     ld hl, -1
     ld (jollyRogerDirUpdate), hl
+    ld de, 33
+    ld hl, (jollyRogerLocation)
+    add hl, de
+    ld (jollyRogerLocation), hl
+    ld a, (jollyRogerYPosCountDown)
+    dec a
+    cp 0
+    jr z, setEndOfLevelFlagJR
+
+    ld (jollyRogerYPosCountDown), a
     jr endOfUpdateJollyRoger
+setEndOfLevelFlagJR
+    ld a, 1
+    ld (goNextLevelFlag),a
+    ld hl, 1
+    ld (pirateDirUpdate),hl
+    xor a
+    ld (bossLevelFlag),a
+
+    ld a, 1
+    ld (evenOddLoopFlag),a
+
+    ld a, (playerLives)
+    dec a
+    cp 0
+    jr z, setGameOverFlagJR
+    ld (playerLives), a
+    call resetJollyRogerPos
+    ret
+setGameOverFlagJR
+    ld a, 1
+    ld (gameOverRestartFlag), a
+    call resetJollyRogerPos
+    ret
 
 reverseDirToPos
     ld hl, 1
@@ -797,8 +836,6 @@ blankToLAndROfInvader
    ret
 
 drawMainInvaderGrid
-
-
     ;; first check if any piratres are left
     ld b, $ff     ; set a (and then next line b to all ones)
     ld a, (pirateValidBitMap)
@@ -835,7 +872,7 @@ checkNextPirateLowest
 pirateReachedLowest
     ld a, 1
     ld (restartLevelFlag), a
-    ret
+    jp updatePirateSpriteCycle
 
 continueDrawPirates
 ;; we have an area of memory which will represent flags for if each of the grid of 5 rows of
@@ -904,9 +941,19 @@ continueWithPirateLoop
    ld a, (evenOddLoopFlag)
    cp 1
    jr z, updatePirateSpriteCycle
+
+   ;ld a,1
+   ;ld de, 760
+   ;call print_number8bits
+
    jr endOfPirateSpriteUpdate
    ; update the sprite to draw from the 3 cycles
 updatePirateSpriteCycle
+
+   ;ld a,2
+   ;ld de, 760
+   ;call print_number8bits
+
    ; update X position and reverse direction if reached end limits
    call updatePirateXPos
 
@@ -935,7 +982,6 @@ resetPirateSprite
 
 endOfPirateSpriteUpdate
    ret
-
 
 ;; check if missile hit pirates
 
@@ -969,6 +1015,46 @@ increaseScoreSharkHitLoop
 skipCheckSharkHit
 
 
+    ld a, (bossLevelFlag)
+    cp 0
+    jr z, skipCheckBossHit
+
+    ; code for jolly roger hit detect
+
+    ld de, (jollyRogerLocation)
+    ld hl, 36
+    add hl, de
+    ex de, hl
+    ld hl, (currentMissilePosition)
+
+    ; now compare upper and lower bytes of hl and de
+    ld a, h
+    cp d
+    jr z, checkNextRegMissileHit
+    jr noHitMissileBoss
+checkNextRegMissileHit
+    ld a, l
+    cp e
+    jr z, MissileHitBoss
+    jr noHitMissileBoss
+MissileHitBoss
+    ld b, 100
+incScoreBossHitLoop
+    push bc
+       call increaseScore
+    pop bc
+    djnz incScoreBossHitLoop
+    ld a, 1
+    ld (goNextLevelFlag), a
+    xor a
+    ld (bossLevelFlag),a
+    call resetJollyRogerPos
+
+    ret
+noHitMissileBoss
+    ret
+
+skipCheckBossHit
     ld hl, (pirateTopLeftPosition)
 
     ld (pirateRowLeftPositionTemp), hl
@@ -1103,6 +1189,8 @@ executeRestartLevel
     call printstring
     call printLivesAndScore
 
+    ld a, 1
+    ld (evenOddLoopFlag),a
     ;; drew player death animation
     ld hl, playerHitSprite
     ld (deadPlayerSpritePointer), hl
@@ -1210,6 +1298,9 @@ executeNextLevelStart
     ld bc, 2
     call printstring
 
+    ld a, 1
+    ld (evenOddLoopFlag),a
+
     ld a, (gameLevel)
     inc a
     daa     ; convert to binary coded decimal to ease the display
@@ -1218,11 +1309,16 @@ executeNextLevelStart
     ld a, (levelCountDown)
     dec a
     cp 1
-    jp z, skipStoreLevelCountDown
-    ;; could use this to start end end of level boss for now just hold at zero
+    jr z, setBossLevelFlag
+    ;; could use this to start end end of level boss for now just hold at 1
     ld (levelCountDown), a
-skipStoreLevelCountDown
-
+    jr continueGampLoop
+setBossLevelFlag
+    ld a, 1
+    ld (bossLevelFlag), a
+    ld a, 4
+    ld a, (levelCountDown)
+continueGampLoop
     xor a
     ld a, (MissileInFlightFlag)
     ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things
@@ -1326,6 +1422,21 @@ noDrawSharkAndSetInvalid
 
 endDrawSharkBonus
     ret
+
+resetJollyRogerPos
+    ; reset the jolly roger for next boss level time
+    ld hl, Display+1
+    ld de, 39
+    add hl, de
+    ld (jollyRogerLocation), hl
+    ld hl, 1
+    ld (jollyRogerDirUpdate),hl
+    ld a, 5
+    ld (jollyRogerXPos),a
+    ld a, 12
+    ld (jollyRogerYPosCountDown),a
+    ret
+
 
 
 ;;;; sprite code
@@ -1746,7 +1857,8 @@ enemySprite5by8Blank
     DB 0, 0, 0 ,0, 0
     DB 0, 0, 0 ,0, 0
     DB 0, 0, 0 ,0, 0
-
+bossLevelFlag
+    DB 0
 sharkPosX
     DB 0
 sharkAbsoluteScreenPos
@@ -1795,6 +1907,8 @@ jollyRogerXPos
     DB 0
 jollyRogerLocation
     DW 0
+jollyRogerYPosCountDown
+    DB 0
 previousJollyRogerLocation
     DW 0
 gameOverRestartFlag
