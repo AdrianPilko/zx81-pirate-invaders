@@ -71,7 +71,7 @@ PLAYER_START_POS EQU 637
 PLAYER_LIVES EQU 3
 ;PIRATE_START_POS EQU 366
 PIRATE_START_POS EQU 36
-
+LEVEL_COUNT_DOWN_INIT EQU 10
 
 VSYNCLOOP       EQU      2
 
@@ -351,7 +351,7 @@ initVariables
     ld a, PLAYER_LIVES
     ld (playerLives), a
 
-    ld a, 4
+    ld a, LEVEL_COUNT_DOWN_INIT
     ld (levelCountDown), a
 
     ld a, $01
@@ -1036,6 +1036,8 @@ checkNextRegMissileHit
     jr z, MissileHitBoss
     jr noHitMissileBoss
 MissileHitBoss
+    xor a
+    ld (bossLevelFlag), a
     ld b, 100
 incScoreBossHitLoop
     push bc
@@ -1306,7 +1308,7 @@ executeNextLevelStart
 
     ld a, (levelCountDown)
     dec a
-    cp 1
+    cp 6
     jr z, setBossLevelFlag
     ;; could use this to start end end of level boss for now just hold at 1
     ld (levelCountDown), a
@@ -1314,7 +1316,7 @@ executeNextLevelStart
 setBossLevelFlag
     ld a, 1
     ld (bossLevelFlag), a
-    ld a, 4
+    ld a, LEVEL_COUNT_DOWN_INIT
     ld a, (levelCountDown)
 continueGampLoop
     xor a
@@ -1433,6 +1435,10 @@ resetJollyRogerPos
     ld (jollyRogerXPos),a
     ld a, 12
     ld (jollyRogerYPosCountDown),a
+    xor a
+    ld (bossLevelFlag), a
+    ld a, LEVEL_COUNT_DOWN_INIT
+    ld (levelCountDown), a
     ret
 
 
