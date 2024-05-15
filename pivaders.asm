@@ -1565,7 +1565,7 @@ skipAddHund
 
     ; check if equal, and if so then check the tens, could be 00 50, or 01 50 in high score and current score
     jr z, highScoreHundEqualCheckTens
-    ; high_score_hund > score_mem_hund   so don't set
+    ; high_score_hund > score_mem_hund so don't set
     jr skipCheckRestHighScore
 
 highScoreHundEqualCheckTens
@@ -1585,6 +1585,30 @@ setHighScore
     jr skipCheckRestHighScore
 
 skipCheckRestHighScore
+
+;; check if points reached 1000 if so then award new life
+;; currently exactly 1000 so not too good:(
+    ld a, (score_mem_hund)
+    ld b,a     ; load the second 8-bit number into register b (via a)
+    ld a, $10   ; load the first 8-bit number into register a
+    cp b            ; compare a with the second 8-bit number (in register b)
+    jr z, scoreNewLifeCheckTens
+    ; high_score_hund > score_mem_hund so don't set
+    jr endOfIncreaseScore
+
+scoreNewLifeCheckTens
+    ld a, (score_mem_tens)
+    ld b, a
+    ld a, $00
+    cp b
+    jp z, awardNewLife ; jump if carry flag is set (a < b)
+    jr endOfIncreaseScore
+
+awardNewLife
+    ld a, (playerLives)
+    inc a
+    ld (playerLives),a
+endOfIncreaseScore
     ret
 
 setRandomPirateToShoot
@@ -1967,7 +1991,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_5,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_6,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 
