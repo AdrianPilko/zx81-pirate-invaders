@@ -71,7 +71,8 @@ PLAYER_START_POS EQU 637
 PLAYER_LIVES EQU 3
 ;PIRATE_START_POS EQU 366
 PIRATE_START_POS EQU 36
-LEVEL_COUNT_DOWN_INIT EQU 10
+LEVEL_COUNT_DOWN_INIT EQU 4
+LEV_COUNTDOWN_TO_INVOKE_BOSS EQU 1
 
 VSYNCLOOP       EQU      2
 
@@ -1034,6 +1035,16 @@ checkNextRegMissileHit
     ld a, l
     cp e
     jr z, MissileHitBoss
+    inc hl
+    ld a, h
+    cp d
+    jr z, checkNextRegMissileHit2
+    jr noHitMissileBoss
+checkNextRegMissileHit2
+    ld a, l
+    cp e
+    jr z, MissileHitBoss
+
     jr noHitMissileBoss
 MissileHitBoss
     xor a
@@ -1083,10 +1094,10 @@ missileCheckHitLoop
         and b
         jr z, noHitMissile
 
+        ;; ok so we have checked everything ready for finally seeing if missile hit
         ld de, (pirateRowLeftPositionTemp)
         ld hl, (currentMissilePosition)
-
-        ; now compare upper and lower bytes of hl and de
+        ; compare upper and lower bytes of hl and de
         ld a, h
         cp d
         jr z, checkNextPirateMissileHit
@@ -1095,6 +1106,18 @@ checkNextPirateMissileHit
         ld a, l
         cp e
         jr z, MissileHitPirate
+        ; check next position along (makes game better to play)
+        inc hl
+        ; compare upper and lower bytes of hl and de
+        ld a, h
+        cp d
+        jr z, checkNextPirateMissileHit2
+        jr noHitMissile
+checkNextPirateMissileHit2
+        ld a, l
+        cp e
+        jr z, MissileHitPirate
+
         jr noHitMissile
 MissileHitPirate
         ;; missile/cannon HIT!!!
@@ -1308,7 +1331,7 @@ executeNextLevelStart
 
     ld a, (levelCountDown)
     dec a
-    cp 6
+    cp LEV_COUNTDOWN_TO_INVOKE_BOSS
     jr z, setBossLevelFlag
     ;; could use this to start end end of level boss for now just hold at 1
     ld (levelCountDown), a
