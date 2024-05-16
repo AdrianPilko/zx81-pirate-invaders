@@ -415,12 +415,14 @@ continueWithGameLoop
     ld a, (goNextLevelFlag)
     cp 1
     call z, executeNextLevelStart
+    xor a
+    ld (goNextLevelFlag), a
 
     ld a, (restartLevelFlag)
     cp 1
     call z, executeRestartLevel
-
-
+    xor a
+    ld (restartLevelFlag), a
 
     ld a, (gameOverRestartFlag)
     cp 1
@@ -468,9 +470,6 @@ skipSharkInGameLoop
     call drawSprite
 
 noJollyRogerDraw
-
-
-
 
     call printLivesAndScore
 
@@ -855,7 +854,7 @@ checkIfPlayerHitPirates
     ld hl, (pirateTopLeftPosition)
     ld (pirateRowLeftPositionTemp), hl
     ld hl, Display+1
-    ld de, $018e   ; $018e is the offset to the lowest row the pirates should be able to get
+    ld de, $01d0   ;1af $018e is the offset to the lowest row the pirates should be able to get
     add hl, de
     ex de, hl
     ld hl, (pirateRowLeftPositionTemp) ;; reload hl with pirateRowLeftPositionTemp
@@ -1205,6 +1204,12 @@ endLoopLabelPriateCheck
 
 
 executeRestartLevel
+
+    xor a
+    ld (restartLevelFlag), a
+    ld (sharkValid), a
+    ld (sharkBonusCountUp), a
+
     call CLS
     ; draw top line where lives and score go
     ld de, TopLineText
@@ -1306,11 +1311,6 @@ skipGameOverFlagSet
     ;ld a, $80   ; for test only top left pirate is alive
     ;ld a, $55   ; for test every other pirate is alive
     ld (pirateValidBitMap), a
-
-    xor a
-    ld (restartLevelFlag), a
-    ld (sharkValid), a
-    ld (sharkBonusCountUp), a
     ret
 
 
