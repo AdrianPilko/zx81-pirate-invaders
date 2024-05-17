@@ -397,7 +397,8 @@ waitForTVSync
     ld a, (evenOddLoopCount)
     inc a
     cp b
-    jr z, resetEvenOddAndSetFlag
+    jr nc, resetEvenOddAndSetFlag  ; levelCountDown greater than evenOddLoopCount
+    jr z, resetEvenOddAndSetFlag   ; levelCountDown equal to evenOddLoopCount
     ld (evenOddLoopCount), a
     xor a
     ld (evenOddLoopFlag), a    ; used for multi rate enemies
