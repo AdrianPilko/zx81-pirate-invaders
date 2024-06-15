@@ -331,7 +331,8 @@ initVariables
     ld (evenOddLoopFlag), a    ; used for multi rate enemies and other things
     ld (nextPirateToFireIndex), a
     ld (restartLevelFlag), a
-
+    ld (sharkSpriteCycleCount), a
+	
     ld a, (missileCountDown)
     ld a, 9
     ld (playerXPos), a
@@ -342,6 +343,11 @@ initVariables
     add hl, de
     ld (currentPlayerLocation), hl
     call resetJollyRogerPos
+	
+	ld hl, sharkBonusSprite
+	ld (sharkSpritesPointer), hl
+	
+	
 
 
     ld hl, 1
@@ -1390,6 +1396,27 @@ checkForSharkHit
     ret
 
 drawSharkBonus
+
+;debugBackOne
+;   jp debugBackOne
+
+   ld a, (sharkSpriteCycleCount)
+   inc a
+   cp 3
+   
+   jr z, resetSharkSpriteSprite
+   ld (sharkSpriteCycleCount), a
+   ld hl, (sharkSpritesPointer)
+   ld de, 32
+   add hl, de
+   ld (sharkSpritesPointer), hl
+   jr continueDrawShark
+resetSharkSpriteSprite
+   xor a
+   ld (sharkSpriteCycleCount), a
+   ld hl, sharkBonusSprite
+   ld (sharkSpritesPointer), hl
+continueDrawShark
     xor a
     ld d, a
     ld a, (sharkPosX)
@@ -1420,7 +1447,7 @@ drawSharkBonus
     ld de, 33
     add hl, de
     ex de, hl
-    ld hl, sharkBonusSprite
+    ld hl, (sharkSpritesPointer)
     ld c, 8
     ld b, 4
     call drawSprite
@@ -1442,8 +1469,6 @@ noDrawSharkAndSetInvalid
     ld c, 8
     ld b, 4
     call drawSprite
-
-
 endDrawSharkBonus
     ret
 
@@ -1921,6 +1946,10 @@ sharkValid
     DB 0
 sharkBonusCountUp
     DB 0
+sharkSpritesPointer
+    DW 0
+sharkSpriteCycleCount
+    DB 0
 deadPlayerSpritePointer
     DW 0
 playerSpritePointer
@@ -1994,7 +2023,7 @@ high_Score_txt
 credits_and_version_1
 	DB __,_B,_Y,__,_A,__,_P,_I,_L,_K,_I,_N,_G,_T,_O,_N,__, _2,_0,_2,_4,$ff
 credits_and_version_2
-	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_5,_DT,_7,$ff
+	DB __,__,_V,_E,_R,_S,_I,_O,_N,__,_V,_0,_DT,_6,_DT,_0,$ff
 credits_and_version_3
 	DB __,__,__,_Y,_O,_U,_T,_U,_B,_E,_CL, _B,_Y,_T,_E,_F,_O,_R,_E,_V,_E,_R,$ff
 
