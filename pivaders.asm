@@ -23,12 +23,7 @@
 ;;; https://youtube.com/@byteforever7829
 
 ;;; Known bug(s)
-;;; 1) sometimes the pirates don't move for a short time, either on level restart or new level.
-;;;    after a delay they start moving again. The rest of the gaem loop appears to be working
-;;;    correctly as you can still move left right and fire (and hit) the pirates?????
-;;; 2) the high score doesn't register properly for number >= 100  FIXED
-;;; 3) untested - what happens when the level goes past 8 (the fastest left rights pirate movement)
-;;; 4) if you are shooting then die and game over that next game you immediately lose a live
+;;; 1) if you are shooting then die and game over the next game you sometimes immediately lose a life
 
 ;;; Potential Improvements (+extra features)
 ;;; 1) If the pirates second row reaches the players mid ship then the player loses
@@ -38,8 +33,7 @@
 ;;;    "block" of pirates should be able to move to the screen limits not just carry on as if
 ;;;    the edge pirates were still extant.
 ;;; 3) pirates should be able to fire back down
-;;; 4) End scene with skull and cross bones - the sprite data has been designed and in the code
-;;;    just no game logic to set it or do something special with it
+;;; 4) different bonus to get rather than just the shark. maybe giant squid
 
 ;some #defines for compatibility with other assemblers
 ;pasmo only accepts DEFINE
